@@ -41,8 +41,6 @@ namespace lc
 
 			~GnuplotPipe();
 
-			void sendLine(const std::string& line);
-
 		private:
 			FILE* m_pipe = {};
 		};
@@ -60,6 +58,7 @@ namespace lc
 		//          CONSTRUCTORS
 		// ================================
 
+		// Default constructor
 		Gnuplotpp(bool persist = true);
 
 		// default move costructor
@@ -75,8 +74,7 @@ namespace lc
 		//          COMUNICATION
 		// ================================
 
-		using GnuplotPipe::sendLine;
-		//void sendLine(const std::string& line);
+		void sendLine(const std::string& line);
 
 	private:
 	};

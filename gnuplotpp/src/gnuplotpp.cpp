@@ -44,16 +44,6 @@ namespace lc
 			//if (m_pipe)
 			//	_LC_GNUPLOT_PCLOSE(m_pipe);
 		}
-
-		////////////////////////////////////////////////////////////////
-		void GnuplotPipe::sendLine(const std::string& line)
-		{
-			assert(("GnuplotPipe::sendLine requires an open pipe", this->isOpen()));
-			if (!this->isOpen())
-				throw std::runtime_error("GnuplotPipe::sendLine() requires an open pipe");
-
-			*this << line << std::endl;
-		}
 	}
 
 	// ================================================================
@@ -89,4 +79,14 @@ namespace lc
 	// ================================
 	//          COMUNICATION
 	// ================================
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::sendLine(const std::string& line)
+	{
+		assert(("GnuplotPipe::sendLine requires an open pipe", this->isOpen()));
+		if (!this->isOpen())
+			throw std::runtime_error("GnuplotPipe::sendLine() requires an open pipe");
+
+		*this << line << std::endl;
+	}
 }

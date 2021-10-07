@@ -38,7 +38,8 @@ int safe_main(int argc, char** argv)
 {
 	lc::Gnuplotpp gnuplot;
 
-	gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
+	//gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
+	gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))";
 
 	return 0;
 }
