@@ -10,14 +10,19 @@
 ===============================================================================
 LC_NOTICE_END -->
 
-# gnuplot++
+<!-- https://github.com/badges/shields/blob/master/README.md -->
+<!-- https://shields.io/ -->
+![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LucaCiucci/gnuplotpp)
+
+# gnuplot++ ![GitHub](https://img.shields.io/github/license/LucaCiucci/gnuplotpp) ![GitHub issues](https://img.shields.io/github/issues-raw/LucaCiucci/gnuplotpp) [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4)
 A simple C++ Gnuplot interface.
+
 
 This is a very simple library that allows you to call the [Gnuplot](http://www.gnuplot.info/) program from C++ code using a pipe.
 
 Make sure to [install Gnuplot](http://www.gnuplot.info/download.html) before using this library (on Windows you have to add Gnuplot to path by selecting the option during installation or by adding the bin folder to PATH by hand). To test your gnuplot installation you can open a terminal and type `gnuplot --version`.
 
-Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf).
+Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf) and the [gnuplot++ wiki](https://github.com/LucaCiucci/gnuplotpp/wiki).
 
 ## Usage
 
