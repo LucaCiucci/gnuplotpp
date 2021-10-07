@@ -26,6 +26,12 @@ Top level CMake project, see README.md for info
 cmake_minimum_required (VERSION 3.20)
 
 ################################################################
+#                          OPTIONS
+################################################################
+
+set(GNUPLOTPP_HEADER_ONLY "build and install as header only library" OFF)
+
+################################################################
 #                          PROJECT
 ################################################################
 # main project definition
@@ -40,3 +46,5 @@ project("gnuplotpp" VERSION 0.0
 ################################
 #         SUBPROJECTS
 ################################
+
+add_subdirectory("gnuplotpp")
