@@ -15,7 +15,7 @@ LC_NOTICE_END ]]
 ################################################################
 #[[
 
-Top level CMake project, see README.md for info
+TODO
 
 ]]
 

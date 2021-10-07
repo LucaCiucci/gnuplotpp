@@ -15,7 +15,7 @@ LC_NOTICE_END ]]
 ################################################################
 #[[
 
-Top level CMake project, see README.md for info
+TODO
 
 ]]
 
@@ -23,29 +23,8 @@ Top level CMake project, see README.md for info
 #                    basic configurations
 ################################################################
 
-cmake_minimum_required (VERSION 3.20)
-
 ################################################################
-#                          OPTIONS
+#                         SUBFOLDERS
 ################################################################
 
-set(GNUPLOTPP_HEADER_ONLY "build and install as header only library" OFF)
-
-################################################################
-#                          PROJECT
-################################################################
-# main project definition
-
-project("gnuplotpp" VERSION 0.0
-    DESCRIPTION "..."
-    LANGUAGES CXX
-)
-
-# add_subdirectory("cmake")
-
-################################
-#         SUBPROJECTS
-################################
-
-add_subdirectory("gnuplotpp")
-add_subdirectory("apps")
+add_subdirectory("tmp_test")
