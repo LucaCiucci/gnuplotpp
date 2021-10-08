@@ -98,4 +98,16 @@ namespace lc
 
 		*this << line << std::endl;
 	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::m_plot(const std::vector<double>& data)
+	{
+		auto name = "__tmp_aasdf__.txt";
+		std::ofstream file(name);
+		for (const auto& y : data)
+			file << y << std::endl;
+		file.close();
+		//*this << "plot \"tmp.txt\" using 1:2 title 'step'" << std::endl;
+		*this << "plot \"" << name << "\" using 1 title 'step'" << std::endl;
+	}
 }

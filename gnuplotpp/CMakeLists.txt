@@ -24,6 +24,21 @@ TODO
 ################################################################
 
 ################################################################
+#                     EXTERNAL LIBRARIES
+################################################################
+
+find_package(LC)
+message("GNUPLOTPP_USE_LC_LIBRARY = ${GNUPLOTPP_USE_LC_LIBRARY}")
+if (GNUPLOTPP_USE_LC_LIBRARY)
+    if (${LC_FOUND})
+        message("LC library found")
+    else()
+        message(FATAL_ERROR "no LC library found")
+    endif()
+    else()
+endif()
+
+################################################################
 #                         LIBRARY
 ################################################################
 
@@ -44,6 +59,15 @@ target_include_directories(
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}${PROJECT_NAME}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>
 )
+
+################################
+#   PREPROCESSOR DEFINITIONS
+################################
+
+if (GNUPLOTPP_USE_LC_LIBRARY)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC _GNUPLOTPP_USE_LC_LIBRARY)
+    target_link_libraries(${PROJECT_NAME} PUBLIC LC)
+endif()
 
 ################################
 #          INSTALL

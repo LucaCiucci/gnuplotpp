@@ -20,6 +20,12 @@ LC_NOTICE_END */
 #include <Windows.h>
 #endif
 
+// TODO https://github.com/LucaCiucci/LC/issues/22
+#ifdef _GNUPLOTPP_USE_LC_LIBRARY
+#include <LC/math/geometry/Vector.hpp>
+#include <LC/math/geometry/Mat.hpp>
+#endif
+
 namespace lc
 {
 	// TDOO read http://videocortex.io/2017/custom-stream-buffers/
@@ -84,6 +90,24 @@ namespace lc
 		// ================================
 
 		void sendLine(const std::string& line);
+
+		template <std::convertible_to<double> Ty>
+		void plot(const std::vector<Ty>& data);
+
+		void plot_tmp(const std::vector<double>& data)
+		{
+			m_plot(data);
+		}
+
+#ifdef _GNUPLOTPP_USE_LC_LIBRARY
+
+		// ...
+
+#endif // _GNUPLOTPP_USE_LC_LIBRARY
+
+	private:
+
+		void m_plot(const std::vector<double>& data);
 
 	private:
 	};
