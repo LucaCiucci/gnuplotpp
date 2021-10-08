@@ -59,6 +59,10 @@ namespace lc
 	//                       GNUPLOT++ INTERFACE
 	// ================================================================
 
+	const char* Gnuplotpp::Datablock_E = "E";
+	const char* Gnuplotpp::Datablock_EOF = "EOF";
+	const char* Gnuplotpp::Datablock_EOD = "EOD";
+
 	// ================================
 	//          CONSTRUCTORS
 	// ================================
@@ -100,14 +104,120 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::plot(DataBuffer& buffer, PlotOptions options)
+	{
+		// TODO quando esco usa uno scope exit per annullare gnuplot, oppure
+		// usa uno stringstream e poi passa tutto... ma potrebbe occupare troppa memoria
+
+		auto& gp = *this;
+#define _TMP_GNUPLOTPP_SPACE gp << " "
+		
+		gp << "plot '-'";
+
+		_TMP_GNUPLOTPP_SPACE;
+
+		// telling which data columns to plot
+		{
+			if (options.cols.size() <= 0)
+				throw std::runtime_error("cannot plot no columns: options.cols.size() must be > 0");
+			gp << "using ";
+			for (auto it = options.cols.begin(); it != options.cols.end(); it++)
+			{
+				if (*it >= buffer.cols())
+					throw std::runtime_error("cannot plot columns index higher than buffer columns");
+				gp << (*it + 1);// note that gnuplot indices start from 1, therfore we have to add 1
+				if (std::next(it) != options.cols.end())
+					gp << ":";
+			}
+		}
+
+		_TMP_GNUPLOTPP_SPACE;
+
+		// setting plot title
+		if (options.title)
+		{
+			gp << "title '" << options.title.value() << "'";
+			_TMP_GNUPLOTPP_SPACE;
+		}
+
+		// passing data to gnuplot
+		{
+			// data on new line
+			gp << std::endl;
+			
+			// write the data
+			gp << buffer;
+
+			// tell end of data
+			gp << Datablock_EOD << std::endl;
+			//gp << Datablock_E << std::endl;// <- this would do the same
+		}
+
+#undef _TMP_GNUPLOTPP_SPACE
+	}
+
+	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::m_plot(const std::vector<double>& data)
 	{
-		auto name = "__tmp_aasdf__.txt";
-		std::ofstream file(name);
-		for (const auto& y : data)
-			file << y << std::endl;
-		file.close();
-		//*this << "plot \"tmp.txt\" using 1:2 title 'step'" << std::endl;
-		*this << "plot \"" << name << "\" using 1 title 'step'" << std::endl;
+		if constexpr (0)
+		{
+			auto name = "__tmp_aasdf__.txt";
+			std::ofstream file(name);
+			for (const auto& y : data)
+				file << y << std::endl;
+			file.close();
+			//*this << "plot \"tmp.txt\" using 1:2 title 'step'" << std::endl;
+			*this << "plot \"" << name << "\" using 1 title 'step'" << std::endl;
+		}
+
+		if constexpr (0)
+		{
+			DataBuffer buff;
+			for (const auto& y : data)
+				buff.push_row({ y });
+			*this << "plot '-' using 1" << "\n";
+			*this << buff;
+			*this << Datablock_EOD << std::endl;
+		}
+
+		if constexpr (1)
+		{
+			DataBuffer buff;
+			for (const auto& y : data)
+				buff.push_row({ y });
+			this->plot(buff);
+		}
 	}
+
+	Gnuplotpp::DataBuffer::DataBuffer(size_t cols) :
+		m_cols(cols)
+	{
+		assert(("cols must be > 0", cols > 0));
+	}
+
+	void Gnuplotpp::DataBuffer::push_row(std::list<double> row)
+	{
+		assert(("row size must be equal to the number of cols", row.size() == this->cols()));
+		if (row.size() != this->cols())
+			throw std::runtime_error("row size must be equal to the number of cols");
+
+		for (const auto& x : row)
+			m_data.push_back(x);
+	}
+}
+
+std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::DataBuffer& buffer)
+{
+	for (size_t i = 0; i < buffer.rows(); i++)
+	{
+		for (size_t j = 0; j < buffer.cols(); j++)
+		{
+			ostream << buffer.at(i, j);
+			if (j < buffer.cols() - 1)
+				ostream << "\t";
+		}
+		ostream << std::endl;
+	}
+
+	return ostream;
 }
