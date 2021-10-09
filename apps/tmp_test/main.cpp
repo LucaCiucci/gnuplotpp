@@ -12,6 +12,12 @@ LC_NOTICE_END */
 
 #include <iostream>
 
+#include <chrono>
+#include <thread>
+
+// !!!
+#include <iomanip>      // std::setw
+
 #include <gnuplotpp/gnuplotpp.hpp>
 
 int safe_main(int argc, char** argv);
@@ -40,7 +46,66 @@ int safe_main(int argc, char** argv)
 
 	//gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
 	gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;;
-	gnuplot.plot_tmp({1, 2, 3, 2, 1});
+	//gnuplot.plot_tmp({1, 2, 3, 2, 1});
+
+	lc::Gnuplotpp::DataBuffer buffer;
+	std::vector<double> v{ 1, 2, 2, 3, 2, 1, 1, 2, 1, 42, 40, 30, 20, 10, 0 };
+	for (const auto& y : v)
+		buffer << (int)y << lc::endRow;
+	//gnuplot.plot(buffer);
+	gnuplot.plot(std::vector<float>{ 42, 40, 30, 20, 10, 0 }, { .spacing = 0.1, .options = { .title = "Hello There!" } });
+
+	if (0)
+	{//gnuplot << "set mxtics 2" << std::endl;
+		gnuplot << "set style line 81 lt 0 lc rgb \"#808080\" lw 0.5" << std::endl;
+		gnuplot << "unset grid" << std::endl;
+		gnuplot << "set grid xtics" << std::endl;
+		gnuplot << "set grid mxtics" << std::endl;
+		gnuplot.setGridOptions({ true, true });
+	}
+
+	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}, {.options = {.title = "a"}});
+	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}, {.options = {.title = "a"}});
+
+	for (int i = 0; i <= 10*0 - 1; i++)
+	{
+		lc::Gnuplotpp::LineStyle ls;
+		//ls.copyFrom = 3;
+		ls.dashType = i;
+		ls.index = 81;
+		ls.lineColor = "red";
+		gnuplot.lineStyle(ls);
+		gnuplot.setGridOptions({true});
+
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(1s);
+		gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5} }, { .options = {.title = "a"} });
+	}
+	{
+		lc::Gnuplotpp::LineStyle ls;
+		ls.index = 50;
+		//ls.copyFrom = 3;
+		ls.dashType = ".... - ... - .. - . -";
+		ls.dashType = ".-_";
+		ls.dashType = ".._";
+		//ls.lineWidth = 4;
+		ls.index = 81;
+		ls.lineColor = "red";
+		gnuplot.lineStyle(ls);
+		auto ls2 = ls;
+		ls2.index = 51;
+		ls2.lineColor = "blue";
+		gnuplot.setGridOptions({ true, true });
+
+		std::cout << std::hex << 42 << 42 << std::endl;
+		std::cout << std::setw(2) << std::setfill('0') << std::hex << 2 << std::endl;
+		std::cout << std::hex << 2 << std::endl;
+		std::cout << std::hex << 2 << std::endl;
+
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(1s);
+		gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5} }, { .options = {.title = "a"} });
+	}
 
 	return 0;
 }
