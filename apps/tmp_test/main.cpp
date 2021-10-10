@@ -17,6 +17,7 @@ LC_NOTICE_END */
 
 // !!!
 #include <iomanip>      // std::setw
+#include <random>
 
 #include <gnuplotpp/gnuplotpp.hpp>
 
@@ -42,7 +43,10 @@ int main(int argc, char** argv)
 
 int safe_main(int argc, char** argv)
 {
-	lc::Gnuplotpp gnuplot;
+	using lc::Gnuplotpp;
+
+	lc::Gnuplotpp gnuplot(std::ofstream("a.p"));
+	//lc::Gnuplotpp gnuplot;
 
 	//gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
 	gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;;
@@ -53,7 +57,7 @@ int safe_main(int argc, char** argv)
 	for (const auto& y : v)
 		buffer << (int)y << lc::endRow;
 	//gnuplot.plot(buffer);
-	gnuplot.plot(std::vector<float>{ 42, 40, 30, 20, 10, 0 }, { .spacing = 0.1, .options = { .title = "Hello There!" } });
+	gnuplot.plot(std::vector<float>{ 42, 40, 30, 20, 10, 0 }/*, {.spacing = 0.1, .options = {.title = "Hello There!"}}*/);
 
 	if (0)
 	{//gnuplot << "set mxtics 2" << std::endl;
@@ -64,9 +68,10 @@ int safe_main(int argc, char** argv)
 		gnuplot.setGridOptions({ true, true });
 	}
 
-	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}, {.options = {.title = "a"}});
-	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}, {.options = {.title = "a"}});
+	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}/*, {.options = {.title = "a"}}*/);
+	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}/*, {.options = {.title = "a"}}*/);
 
+	/*
 	for (int i = 0; i <= 10*0 - 1; i++)
 	{
 		lc::Gnuplotpp::LineStyle ls;
@@ -80,20 +85,20 @@ int safe_main(int argc, char** argv)
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(1s);
 		gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5} }, { .options = {.title = "a"} });
-	}
+	}*/
 	{
 		lc::Gnuplotpp::LineStyle ls;
-		ls.index = 50;
+		//ls.index = 50;
 		//ls.copyFrom = 3;
 		ls.dashType = ".... - ... - .. - . -";
 		ls.dashType = ".-_";
 		ls.dashType = ".._";
 		//ls.lineWidth = 4;
-		ls.index = 81;
+		//ls.index = 81;
 		ls.lineColor = "red";
-		gnuplot.lineStyle(ls);
+		//gnuplot.lineStyle(ls);
 		auto ls2 = ls;
-		ls2.index = 51;
+		//ls2.index = 51;
 		ls2.lineColor = "blue";
 		gnuplot.setGridOptions({ true, true });
 
@@ -104,7 +109,50 @@ int safe_main(int argc, char** argv)
 
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(1s);
-		gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5} }, { .options = {.title = "a"} });
+		gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5} }/*, {.options = {.title = "a"}}*/);
+
+		std::default_random_engine engine;
+		std::normal_distribution n;
+		std::vector<double> data;
+		for (size_t i = 0; i < 10; i++)
+			data.push_back(n(engine));
+
+		/*
+		lc::Gnuplotpp::SinglePlotOptions options;
+		options.options.lineStyle = lc::Gnuplotpp::LineStyle{};
+		//options.options.lineStyle.value().marker.value().pointType = Gnuplotpp::PointType::Cross;
+		//options.options.lineStyle.value().dashType;
+		options.options.marker.value().pointType = Gnuplotpp::PointType::Circle;
+		options.options.marker.value().pointSize = 2;
+		*/
+
+		lc::Gnuplotpp gnuplot2(std::ofstream("gnuplot-commands.txt"));
+		gnuplot.plot(data/*, options*/);
+		//gnuplot2.plot(data, options);
+
+		gnuplot.plot(
+			// DATA
+			{ 1, 3, 2, 2, 1, 0 },
+			{
+				.title="a",
+				.lineStyle = Gnuplotpp::LineStyle{ .lineColor = "red"}
+			}
+		);
+	}
+	if (0)
+	{
+		std::default_random_engine engine;
+		std::normal_distribution n;
+		std::vector<double> data; data.reserve(100 * 1000);
+		for (size_t i = 0; i < 100; i++)
+		{
+			for (int i = 0; i < 1000; i++)
+				data.push_back(n(engine));
+			gnuplot.plot(data);
+
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(0.01s);
+		}
 	}
 
 	return 0;

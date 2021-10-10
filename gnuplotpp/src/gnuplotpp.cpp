@@ -29,6 +29,9 @@ LC_NOTICE_END */
 #define _LC_GNUPLOT_PCLOSE pclose
 #endif
 
+// this macro is used to put a space
+#define _TMP_GNUPLOTPP_SPACE(s) s << " "
+
 namespace lc
 {
 	namespace _gnuplot_impl_
@@ -58,6 +61,25 @@ namespace lc
 			//if (m_pipe)
 			//	_LC_GNUPLOT_PCLOSE(m_pipe);
 		}
+
+		GnuplotPipe::CommandLineID GnuplotPipe::createNewID(void)
+		{
+			auto ID = std::make_shared<CommandLineIDImpl>();
+
+			ID->id = 50;
+			while (m_idMap.find(ID->id) != m_idMap.end())
+				ID->id++;
+
+			m_idMap[ID->id] = ID;
+			this->cleanIDs();
+
+			return CommandLineID(ID);
+		}
+
+		void GnuplotPipe::cleanIDs(void)
+		{
+			std::erase_if(m_idMap, [](const auto& pair) -> bool { return !pair.second.lock(); });
+		}
 	}
 
 	// ================================================================
@@ -69,47 +91,199 @@ namespace lc
 	const char* Gnuplotpp::Datablock_EOD = "EOD";
 
 	////////////////////////////////////////////////////////////////
-	std::string Gnuplotpp::LineStyle::str(void) const
+	void Gnuplotpp::MarkerSerializer::prepare(GnuplotPipe& os) const
 	{
-		std::stringstream ss;
+		// nothing to do
+	}
 
-		ss << " " << this->index;
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::MarkerSerializer::print(GnuplotPipe& os) const
+	{
+		// pt = pointtype
+		// ps = pointsize
 
-		if (this->copyFrom)
-			ss << " lt " << this->copyFrom.value();// "lt" = "linetype"
-
-		if (this->lineWidth)
-			ss << " lw " << this->lineWidth.value();
-
-		if (this->lineColor)
+		if (m_m.pointType)
 		{
-			// "lc" = "linecolor"
-
-			if (const auto* pString = std::get_if<std::string>(&this->lineColor.value()))
-				ss << " lc \"" << *pString << "\"";
-			if (const auto* pColor = std::get_if<Color>(&this->lineColor.value()))
-				ss << " lc rgb \"#" << *pColor << "\"";
+			_TMP_GNUPLOTPP_SPACE(os);
+			if (const auto* pInt = std::get_if<int>(&m_m.pointType.value()))
+				os << "pt " << *pInt;
+			if (const auto* pType = std::get_if<PointType>(&m_m.pointType.value()))
+				os << "pt " << static_cast<std::underlying_type_t<const PointType>>(*pType);
 		}
 
-		if (this->dashType)
+		if (m_m.pointSize)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+			os << "ps " << m_m.pointSize.value();
+		}
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::LineStyleSerializer::prepare(GnuplotPipe& os) const
+	{
+		auto id = m_id->id;
+		m_id->onExit = [&os, id]() { os << "unset style line " << id; };
+
+		if (m_ls.marker)
+		{
+			m_pms = std::make_unique<MarkerSerializer>(m_ls.marker.value());
+			m_pms->prepare(os);
+		}
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::LineStyleSerializer::print(GnuplotPipe& os) const
+	{
+		// "lt" = "linetype"
+		// "lc" = "linecolor"
+
+		os << "unset style line " << m_id->id << std::endl;
+
+		os << "set style line " << m_id->id;
+
+		if (m_ls.copyFrom)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+			os << "lt " << m_ls.copyFrom.value();
+		}
+
+		if (m_ls.lineWidth)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+			os << "lw " << m_ls.lineWidth.value();
+		}
+
+		if (m_ls.lineColor)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+			if (const auto* pString = std::get_if<std::string>(&m_ls.lineColor.value()))
+				os << "lc \"" << *pString << "\"";
+			if (const auto* pColor = std::get_if<Color>(&m_ls.lineColor.value()))
+				os << "lc rgb \"#" << *pColor << "\"";
+		}
+
+		if (m_ls.dashType)
 		{
 			// "dt" = "dashtype"
-
-			if (const auto* pInt = std::get_if<int>(&this->dashType.value()))
-				ss << " dt " << *pInt;
-			if (const auto* pString = std::get_if<std::string>(&this->dashType.value()))
-				ss << " dt \"" << *pString << "\"";
+			_TMP_GNUPLOTPP_SPACE(os);
+			if (const auto* pInt = std::get_if<int>(&m_ls.dashType.value()))
+				os << "dt " << *pInt;
+			if (const auto* pString = std::get_if<std::string>(&m_ls.dashType.value()))
+				os << "dt \"" << *pString << "\"";
 		}
 
-		if (this->pointType)
-			ss << " lc " << this->pointType.value();
+		if (m_pms)
+			m_pms->print(os);
 
-		if (this->pointSize)
-			ss << " lc " << this->pointSize.value();
-
-		std::cout << "ls: " << ss.str() << std::endl;
-		return ss.str();
+		os << std::endl;
 	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::PlotOptionsSerializer::prepare(GnuplotPipe& os) const
+	{
+		if (m_opt.lineStyle)
+		{
+			if (m_opt.marker)
+			{
+				m_opt.lineStyle.value().marker = {};
+			}
+
+			m_lsSserializer = std::make_unique<LineStyleSerializer>(os.createNewID(), m_opt.lineStyle.value());
+			m_lsSserializer->prepare(os);
+			m_lsSserializer->print(os);
+		}
+
+		if (m_opt.marker)
+		{
+			m_pms = std::make_unique<MarkerSerializer>(m_opt.marker.value());
+			m_pms->prepare(os);
+		}
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::PlotOptionsSerializer::print(GnuplotPipe& os) const
+	{
+		// cols
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+
+			// to tell wich columns to use, we need to type something like:
+			// > plot ... using 1:2
+			// where 1:2 means: use the first and second column as coordinates, another option is
+			// to simply write something like:
+			// > plot ... using 1
+			// to plot only using ordinate values
+			os << "using ";
+
+			// now we type the column numbers:
+			for (auto it = m_opt.cols.begin(); it != m_opt.cols.end(); it++)
+			{
+				// TODO this cekck in another function
+				if constexpr (0)
+				{
+					//if (*it >= buffer.cols())
+					//	throw std::runtime_error("cannot plot columns index higher than buffer columns");
+				}
+
+				// note that gnuplot indices start from 1, therfore we have to add 1
+				os << (*it + 1);
+
+				// insert a ":" between every number
+				if (std::next(it) != m_opt.cols.end())
+					os << ":";
+			}
+		}
+	
+		if (m_opt.errorBars)
+		{
+			switch (m_opt.errorBars.value())
+			{
+			case ErrorBar::X:
+				_TMP_GNUPLOTPP_SPACE(os);
+				os << "with ";
+				os << "xerr";
+				break;
+			case ErrorBar::Y:
+				_TMP_GNUPLOTPP_SPACE(os);
+				os << "with ";
+				os << "yerr";
+				break;
+			case ErrorBar::XY:
+				_TMP_GNUPLOTPP_SPACE(os);
+				os << "with ";
+				os << "xyerrorbars";
+				break;
+			default:
+				break;
+			}
+		}
+
+		// setting plot line style
+		if (m_lsSserializer)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+
+			// TODO change ?!?!?
+			os << "with linespoint ";
+
+			os << "ls " << m_lsSserializer->m_id->id;
+		}
+
+		// setting plot title only if set
+		if (m_opt.title)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+
+			// TODO check no special characters in title
+
+			// tell gnuplot the plot title
+			os << "title '" << m_opt.title.value() << "'";
+		}
+
+		if (m_pms)
+			m_pms->print(os);
+	}
+
 
 	// ================================
 	//          CONSTRUCTORS
@@ -129,6 +303,12 @@ namespace lc
 
 		this->setTicksOptions({});
 		this->setGridOptions({});
+	}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::Gnuplotpp(std::ofstream&& file)
+	{
+		(std::ofstream&)*this = std::move(file);
 	}
 
 	// ================================
@@ -169,6 +349,8 @@ namespace lc
 		// temporary buffer
 		DataBuffer buffer;
 
+		auto options = (PlotOptions)singlePlotOptions;
+
 		if (singlePlotOptions.spacing)
 		{
 			buffer = DataBuffer(2);
@@ -176,20 +358,20 @@ namespace lc
 			size_t counter = 0;
 			for (const auto& y : data)
 				buffer << ((counter++) * singlePlotOptions.spacing.value()) << y << endRow;
-			singlePlotOptions.options.cols = { 0, 1 };
+			options.cols = { 0, 1 };
 		}
 		else
 		{
 			for (const auto& y : data)
 				buffer << y << endRow;
-			singlePlotOptions.options.cols = { 0 };
+			options.cols = { 0 };
 		}
 
-		this->plot(buffer, singlePlotOptions.options);
+		this->plot(buffer, options);
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::plot(DataBuffer& buffer, PlotOptions options)
+	void Gnuplotpp::plot(DataBuffer& buffer, const PlotOptions& options)
 	{
 		// TODO quando esco usa uno scope exit per annullare gnuplot, oppure
 		// usa uno stringstream e poi passa tutto... ma potrebbe occupare troppa memoria
@@ -198,78 +380,17 @@ namespace lc
 		auto& gp = *this;
 		//std::stringstream gp;
 
-		// this macro is used to put a space
-#define _TMP_GNUPLOTPP_SPACE gp << " "
+		PlotOptionsSerializer optionsSerializer(options);
+		optionsSerializer.prepare(gp);
 		
 		// start the plot commandline, we insert '-' to tell gnuplot to use
 		// a datablock that we will write later
-		gp << "plot '-'";
+		if (options.replot)
+			gp << "replot '-'";
+		else
+			gp << "plot '-'";
 
-		_TMP_GNUPLOTPP_SPACE;
-
-		// tell which data columns to plot
-		{
-			// we need at least a column to plot
-			if (options.cols.size() <= 0)
-				throw std::runtime_error("cannot plot no columns: options.cols.size() must be > 0");
-
-			// to tell wich columns to use, we need to type something like:
-			// > plot ... using 1:2
-			// where 1:2 means: use the first and second column as coordinates, another option is
-			// to simply write something like:
-			// > plot ... using 1
-			// to plot only using ordinate values
-			gp << "using ";
-
-			// now we type the column numbers:
-			for (auto it = options.cols.begin(); it != options.cols.end(); it++)
-			{
-				if (*it >= buffer.cols())
-					throw std::runtime_error("cannot plot columns index higher than buffer columns");
-
-				// note that gnuplot indices start from 1, therfore we have to add 1
-				gp << (*it + 1);
-
-				// insert a ":" between every number
-				if (std::next(it) != options.cols.end())
-					gp << ":";
-			}
-
-			_TMP_GNUPLOTPP_SPACE;
-		}
-
-		if (options.errorBars)
-		{
-			gp << "with ";
-
-			switch (options.errorBars.value())
-			{
-			case lc::Gnuplotpp::ErrorBar::X:
-				gp << "xerr";
-				break;
-			case lc::Gnuplotpp::ErrorBar::Y:
-				gp << "yerr";
-				break;
-			case lc::Gnuplotpp::ErrorBar::XY:
-				gp << "xyerrorbars";
-				break;
-			default:
-				break;
-			}
-
-			_TMP_GNUPLOTPP_SPACE;
-		}
-
-		// setting plot title only if set
-		if (options.title)
-		{
-			// TODO check no special characters in title
-
-			// tell gnuplot the plot title
-			gp << "title '" << options.title.value() << "'";
-
-			_TMP_GNUPLOTPP_SPACE;
-		}
+		optionsSerializer.print(gp);
 
 		// passing data to gnuplot
 		// see https://stackoverflow.com/questions/3318228/how-to-plot-data-without-a-separate-file-by-specifying-all-points-inside-the-gnu
@@ -286,14 +407,12 @@ namespace lc
 		}
 
 		//std::cout << gp.str() << std::endl;
-
-#undef _TMP_GNUPLOTPP_SPACE
 	}
 
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions)
 	{
-		auto& options = singlePlotOptions.options;
+		auto options = (PlotOptions)singlePlotOptions;
 
 		struct ColumnIndices
 		{
@@ -429,9 +548,11 @@ namespace lc
 			break;
 		}
 
-		this->lineStyle(options.majorLineStyle);
-		this->lineStyle(options.minorLineStyle);
-		gp << "set grid ls " << options.majorLineStyle.index << ", ls " << options.minorLineStyle.index << std::endl;
+		LineStyleSerializer majorLineStyleSerialiser(this->createNewID(), options.majorLineStyle);
+		LineStyleSerializer minorLineStyleSerializer(this->createNewID(), options.minorLineStyle);
+		majorLineStyleSerialiser.prepare(*this); minorLineStyleSerializer.prepare(*this);
+		majorLineStyleSerialiser.print(*this); minorLineStyleSerializer.print(*this);
+		gp << "set grid ls " << majorLineStyleSerialiser.m_id->id << ", ls " << minorLineStyleSerializer.m_id->id << std::endl;
 
 		if constexpr (0)
 		{
@@ -440,7 +561,7 @@ namespace lc
 			LineStyle ls;
 			//ls.copyFrom = 3;
 			ls.dashType = 1;
-			ls.index = 81;
+			//ls.index = 81;
 			ls.lineColor = "red";
 			//gp.lineStyle(ls);
 			gp << "set grid ls 81" << std::endl;
@@ -448,46 +569,13 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::lineStyle(LineStyle style)
+	/*void Gnuplotpp::lineStyle(LineStyle style)
 	{
 		auto& gp = *this;
 
 		gp << "unset style line " << style.index << std::endl;
 		gp << "set style line " << style.str() << std::endl;
-	}
-
-	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::m_plot(const std::vector<double>& data)
-	{
-		if constexpr (0)
-		{
-			auto name = "__tmp_aasdf__.txt";
-			std::ofstream file(name);
-			for (const auto& y : data)
-				file << y << std::endl;
-			file.close();
-			//*this << "plot \"tmp.txt\" using 1:2 title 'step'" << std::endl;
-			*this << "plot \"" << name << "\" using 1 title 'step'" << std::endl;
-		}
-
-		if constexpr (0)
-		{
-			DataBuffer buff;
-			for (const auto& y : data)
-				buff.push_row({ y });
-			*this << "plot '-' using 1" << "\n";
-			*this << buff;
-			*this << Datablock_EOD << std::endl;
-		}
-
-		if constexpr (1)
-		{
-			DataBuffer buff;
-			for (const auto& y : data)
-				buff.push_row({ y });
-			this->plot(buff, {.title="serena"});
-		}
-	}
+	}*/
 
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
@@ -570,3 +658,5 @@ std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Color& colo
 		<< std::dec;
 	return ostream;
 }
+
+#undef _TMP_GNUPLOTPP_SPACE

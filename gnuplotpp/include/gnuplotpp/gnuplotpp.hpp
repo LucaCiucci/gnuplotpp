@@ -18,6 +18,7 @@ LC_NOTICE_END */
 #include <optional>
 #include <variant>
 #include <sstream>
+#include <map>
 
 #if defined(_WIN32) || defined (_MSVC_VER)
 #include <Windows.h>
@@ -48,6 +49,9 @@ namespace lc
 		class GnuplotPipe : NonCopyable, public std::ofstream
 		{
 		protected:
+			class CommandLineID;
+			class CommandLineIDImpl;
+		protected:
 
 			bool init(bool persist);
 
@@ -59,8 +63,52 @@ namespace lc
 
 			~GnuplotPipe();
 
+			CommandLineID createNewID(void);
+
+		private:
+
+			void cleanIDs(void);
+			
+			// TODO implement and use
+			std::shared_ptr<CommandLineIDImpl> createNewIDImpl(void);
+
 		private:
 			FILE* m_pipe = {};
+			std::map<size_t, std::weak_ptr<CommandLineIDImpl>> m_idMap;
+		};
+
+		// TODO lc::PrimiteveWrapper https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
+
+		struct GnuplotPipe::CommandLineIDImpl final
+		{
+			size_t id = 0;
+
+			std::function<void(void)> onExit = {};
+
+			CommandLineIDImpl() = default;
+			CommandLineIDImpl(const CommandLineIDImpl&) = default;
+			CommandLineIDImpl(CommandLineIDImpl&&) = default;
+
+			CommandLineIDImpl& operator=(const CommandLineIDImpl&) = default;
+			CommandLineIDImpl& operator=(CommandLineIDImpl&&) = default;
+		};
+
+		class GnuplotPipe::CommandLineID final : public std::shared_ptr<GnuplotPipe::CommandLineIDImpl>
+		{
+		public:
+			using shared_ptr::shared_ptr;
+
+			CommandLineID(const CommandLineID&) = default;
+			CommandLineID(CommandLineID&&) = default;
+
+			CommandLineID& operator=(const CommandLineID&) = default;
+			CommandLineID& operator=(CommandLineID&&) = default;
+
+		private:
+			CommandLineID() = delete;
+			CommandLineID(std::shared_ptr<GnuplotPipe::CommandLineIDImpl> id) : shared_ptr(id) {};
+
+			friend class GnuplotPipe;
 		};
 	}
 
@@ -96,14 +144,6 @@ namespace lc
 
 		};
 
-		struct PlotOptions
-		{
-			std::list<size_t> cols = { 0 };
-			std::optional<std::string> title = {};
-			PlotStyle style = {};
-			std::optional<ErrorBar> errorBars = {};
-		};
-
 		struct Color
 		{
 			uint8_t r = 0;
@@ -112,18 +152,104 @@ namespace lc
 			uint8_t transparency = 0;
 		};
 
+		enum class PointType : int
+		{
+			// gnuplot << "test"
+
+			Empty = -1,
+			Dot = 0,
+			Cross = 1,
+			X = 2,
+			Star = 3,
+			SquareDot = 4,
+			SolidSquare = 5,
+			Circle = 6,
+			SolidCircle = 7,
+			TriangleDot = 8,
+			SolidDot = 9,
+			InvTriangleDot = 10,
+			InvSolidDot = 11,
+			RhombusDot = 12,
+			SolidRhombus = 13,
+			HexagonDot = 14,
+			SolidHexagon = 15,
+		};
+
+		struct GnuplotSerializable
+		{
+			virtual void prepare(GnuplotPipe& os) const = 0;
+			virtual void print(GnuplotPipe& os) const = 0;
+		};
+
+		struct GnuplotSerializer : public GnuplotSerializable, _gnuplot_impl_::NonCopyable
+		{
+			// empty
+		};
+
+		struct Marker
+		{
+			std::optional<std::variant<int, PointType>> pointType = PointType::Cross;
+			std::optional<double> pointSize = {};
+		};
+
+		struct MarkerSerializer : public GnuplotSerializer
+		{
+			const Marker& m_m;
+
+			MarkerSerializer(const Marker& m) : m_m(m) {};
+
+			void prepare(GnuplotPipe& os) const override;
+			void print(GnuplotPipe& os) const override;
+		};
+
 		struct LineStyle
 		{
-			size_t index = 50;
-			std::optional<size_t> copyFrom = {};
+			std::optional<int> copyFrom = {};
 			std::optional<double> lineWidth = {};
 			std::optional<std::variant<std::string, Color>> lineColor = {};
 			std::optional<std::variant<int, std::string>> dashType = {};
-			std::optional<size_t> pointType = {};
-			std::optional<double> pointSize = {};
+			std::optional<Marker> marker = {};
+		};
 
-			static std::string defaultString(void) { return "default"; };
-			std::string str(void) const;
+		struct LineStyleSerializer : public GnuplotSerializer
+		{
+			const LineStyle& m_ls;
+			CommandLineID m_id;
+
+			mutable std::unique_ptr<MarkerSerializer> m_pms;
+
+			LineStyleSerializer(CommandLineID id, const LineStyle& ls) : m_id(id), m_ls(ls) {};
+
+			void prepare(GnuplotPipe& os) const override;
+			void print(GnuplotPipe& os) const override;
+		};
+
+		struct PlotOptions
+		{
+			std::list<size_t> cols = { 0 };
+			std::optional<std::string> title = {};
+			PlotStyle style = {};
+			std::optional<ErrorBar> errorBars = {};
+
+			std::optional<LineStyle> lineStyle;
+			std::optional<Marker> marker = Marker{};
+
+			bool replot = false;
+		};
+
+		struct PlotOptionsSerializer : public GnuplotSerializer
+		{
+			// COPY
+			mutable PlotOptions m_opt;
+
+			mutable std::unique_ptr<MarkerSerializer> m_pms;
+
+			mutable std::unique_ptr<LineStyleSerializer> m_lsSserializer;
+
+			PlotOptionsSerializer(const PlotOptions& opt) : m_opt(opt) {};
+
+			void prepare(GnuplotPipe& os) const override;
+			void print(GnuplotPipe& os) const override;
 		};
 
 		struct TicksOptions
@@ -160,8 +286,8 @@ namespace lc
 			Enabled minor = false;
 			GridLevel gridLevel = GridLevel::LayerDefault;
 
-			LineStyle majorLineStyle = { .index = 51, .lineColor = Color{ 0, 0, 0, 192 } };
-			LineStyle minorLineStyle = { .index = 52, .lineColor = Color{ 0, 0, 0, 224 } };
+			LineStyle majorLineStyle = { .lineColor = Color{ 0, 0, 0, 192 } };
+			LineStyle minorLineStyle = { .lineColor = Color{ 0, 0, 0, 224 } };
 		};
 
 		// ================================
@@ -170,6 +296,8 @@ namespace lc
 
 		// Default constructor
 		Gnuplotpp(bool persist = true);
+
+		Gnuplotpp(std::ofstream&& file);
 
 		// default move costructor
 		Gnuplotpp(Gnuplotpp&&) = default;
@@ -190,8 +318,32 @@ namespace lc
 
 		struct SinglePlotOptions
 		{
+			// title of the plot
+			std::optional<std::string> title = {};
+
+			// Spacing between points, if not set it will be automatically
+			// choosen by gnuplot (it should be 1)
 			std::optional<double> spacing = {};
-			PlotOptions options = {};
+
+			// Style of the line connecting the points, if not set
+			// no line will be drawn
+			std::optional<LineStyle> lineStyle;
+
+			// The marker type and size
+			std::optional<Marker> marker = Marker{};
+
+			// TODO description
+			bool replot = false;
+
+			explicit operator PlotOptions() const
+			{
+				return {
+					.title = title,
+					.lineStyle = lineStyle,
+					.marker = marker,
+					.replot = replot
+				};
+			};
 		};
 
 		// Plot a vector of double values
@@ -201,6 +353,7 @@ namespace lc
 		//  - gnuplot.plot(your_data, { .spacing=0.1 })
 		//  - gnuplot.plot(your_data, { .spacing=0.1, .options={ .title="Hello There!" } })
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
+		// TODO update examples
 		void plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
 
 		// Plot a vector of real values
@@ -214,7 +367,7 @@ namespace lc
 		void plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
 
 		// plot a buffer according to the options
-		void plot(DataBuffer& buffer, PlotOptions options = {});
+		void plot(DataBuffer& buffer, const PlotOptions& options = {});
 
 		struct ErrorbarData
 		{
@@ -235,11 +388,9 @@ namespace lc
 
 #endif // _GNUPLOTPP_USE_LC_LIBRARY
 
-		void lineStyle(LineStyle style);
+		//void lineStyle(LineStyle style);
 
 	private:
-
-		void m_plot(const std::vector<double>& data);
 
 		std::ostream& getCurrentStream(void);
 
