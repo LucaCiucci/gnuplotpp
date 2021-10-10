@@ -10,12 +10,6 @@
 ===============================================================================
 LC_NOTICE_END -->
 
-<style>
-.func-details {
-    padding-left : 1em
-}
-</style>
-
 # The `Gnuplotpp` class
 
 ## Methods:
@@ -29,7 +23,7 @@ Constructors:
 ### Constructors
 
 #### `Gnuplotpp::Gnuplotpp()`
-<details class="func-details">
+<details style="padding-left : 1em; border-left : solid 1px rgb(128, 128, 128)">
 <summary>aaaaa</summary>
 
 aaaaaa
