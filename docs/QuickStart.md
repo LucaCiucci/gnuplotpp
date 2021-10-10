@@ -31,7 +31,7 @@ using namespace lc;
 
 ## Sending commands:
 
-Lets first create a _Gnuplot++_ instance:
+Let's first create a _Gnuplot++_ instance:
 ```c++
 Gnuplotpp gp;
 ```
