@@ -23,19 +23,62 @@ Make sure to [install Gnuplot](http://www.gnuplot.info/download.html) before usi
 
 Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf) and the [gnuplot++ wiki](https://github.com/LucaCiucci/gnuplotpp/wiki).
 
+## Features
+
+ - extremely simple and easy to use
+ - no need of knowing gnuplot syntax
+ - simple `std::cout` like interaction for sending commands using the `<<` operator
+ - modern `C++` style interation using high level functions
+ - no messing with Gnuplot indices
+ - no temporary data files needed
+ - easy plot customization
+ - MIT license
+
 ## Usage
+Using the `Gnuplotpp` class is extremely esasy.
 
-You have several options to use this library (see below):
-- using as a single header library (simplest)
-- building and installing (recommended)
-- adding both `.hpp` and `.cpp` files into your project
+Take a look at the [Including](./docs/Including.md) guide to discover how you can use the _Gnuplot++_ library in your project, then read the [Quick Start guide](./docs/QuickStart.md) to rapidly start using the library
 
-Once you have followed one of the methods, you can simply use the `GnuplotInterface` class like this:
+You can send commands like you would do in the gnuplot shell:
 ```cpp
-// TODO
+#include <gnuplotpp/gnuplotpp.hpp>
+// ...
+Gnuplotpp gp;
+gp << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
+```
+or use the interface functions to easily create complex and customizable plots:
+```cpp
+Gnuplotpp gp;
+auto myPlot = gnuplot.plot({ 1, 2, 3, 2 });
+gp.render({ myPlot });
 ```
 
-See the [gnuplot++ wiki](https://github.com/LucaCiucci/gnuplotpp/wiki) for additional usege tips.
+## Contributing
+
+You can **fork** the project and create your own version.
+
+If you want to tell a problem, suggest a feature or request assistance for a problem that can be shared, create an **issue**.
+
+If you want to directly contribute to the main project, create a **fork** and then create a pull request that I will review. Please, read the rules in the [`CONTRIBUTING.md`](CONTRIBUTING.md) file befor creating a pull request.
+
+If you appreciate my work, please consider making a donation using the [Donate](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4) button: **STUDENTS NEED COFFEE :coffee:**
+
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+
+# OLD
 
 ### Using as a single header library
 
@@ -95,7 +138,3 @@ Please, read the [wiki Building and Installing page](https://github.com/LucaCiuc
 ### Adding `.hpp` and `.cpp` fiels to your project
 
 This is another simple option: you add both `gnuplotpp.hpp` and `gnuplotpp.cpp` to your project so that `gnuplotpp.cpp` gets compiled.
-
-## Contributing
-
-Read `CONTRIBUTING.md`.

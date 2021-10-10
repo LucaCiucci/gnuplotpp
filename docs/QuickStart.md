@@ -12,6 +12,8 @@ LC_NOTICE_END -->
 
 # _Gnuplot++_ quick start
 
+This is a quick start guide, for more detailed usage description, please read the [usage](usage.md) guide.
+
 ## Including _Gnuplot++_
 
 The first step is to include gnuplot in your project. There are several ways to do this, the simplest is using CMake:
@@ -65,7 +67,7 @@ _Gnuplot++_ library provide simple ways to create plots from _C++_, the simplest
 Gnuplotpp gp;
 
 // This creates a plot instance that contains all the necessary data to render the chart
-auto myPlot = gnuplot.plot({ 1, 2, 3, 2});
+auto myPlot = gnuplot.plot({ 1, 2, 3, 2 });
 
 // actually renders the plot
 gp.render({ myPlot });
