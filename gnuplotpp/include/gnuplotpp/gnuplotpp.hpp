@@ -65,9 +65,9 @@ namespace lc
 
 			CommandLineID createNewID(void);
 
-		private:
-
 			void cleanIDs(void);
+
+		private:
 			
 			// TODO implement and use
 			std::shared_ptr<CommandLineIDImpl> createNewIDImpl(void);
@@ -224,6 +224,14 @@ namespace lc
 			void print(GnuplotPipe& os) const override;
 		};
 
+		enum class PlotAxes
+		{
+			x1y1,
+			x1y2,
+			x2y1,
+			x2y2,
+		};
+
 		struct PlotOptions
 		{
 			std::list<size_t> cols = { 0 };
@@ -234,7 +242,7 @@ namespace lc
 			std::optional<LineStyle> lineStyle;
 			std::optional<Marker> marker = Marker{};
 
-			bool replot = false;
+			std::optional<PlotAxes> axes = {};
 		};
 
 		struct PlotOptionsSerializer : public GnuplotSerializer
@@ -290,6 +298,18 @@ namespace lc
 			LineStyle minorLineStyle = { .lineColor = Color{ 0, 0, 0, 224 } };
 		};
 
+		struct Plot2d
+		{
+			std::unique_ptr<DataBuffer> pBuffer;
+			std::unique_ptr<PlotOptions> pOptions;
+
+			void render(Gnuplotpp& gp) const;
+
+		private:
+			std::unique_ptr<PlotOptionsSerializer> pSerializer;
+			friend class Gnuplotpp;
+		};
+
 		// ================================
 		//          CONSTRUCTORS
 		// ================================
@@ -332,8 +352,7 @@ namespace lc
 			// The marker type and size
 			std::optional<Marker> marker = Marker{};
 
-			// TODO description
-			bool replot = false;
+			std::optional<PlotAxes> axes = {};
 
 			explicit operator PlotOptions() const
 			{
@@ -341,7 +360,7 @@ namespace lc
 					.title = title,
 					.lineStyle = lineStyle,
 					.marker = marker,
-					.replot = replot
+					.axes = axes
 				};
 			};
 		};
@@ -354,7 +373,15 @@ namespace lc
 		//  - gnuplot.plot(your_data, { .spacing=0.1, .options={ .title="Hello There!" } })
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
-		void plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
+
+		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
+
+		// TOOD ...
+		//void render(Plot2dRef plot) { this->render({ plot }); };
+
+		// TOOD ...
+		void render(std::list<Plot2dRef> plots);
 
 		// Plot a vector of real values
 		// Note that options.cols is ignored

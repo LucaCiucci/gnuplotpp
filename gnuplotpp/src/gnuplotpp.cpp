@@ -185,7 +185,8 @@ namespace lc
 		{
 			if (m_opt.marker)
 			{
-				m_opt.lineStyle.value().marker = {};
+				m_opt.lineStyle.value().marker = m_opt.marker;
+				m_opt.marker = {};
 			}
 
 			m_lsSserializer = std::make_unique<LineStyleSerializer>(os.createNewID(), m_opt.lineStyle.value());
@@ -282,6 +283,31 @@ namespace lc
 
 		if (m_pms)
 			m_pms->print(os);
+
+		if (m_opt.axes)
+		{
+			_TMP_GNUPLOTPP_SPACE(os);
+
+			os << "axes ";
+			auto v = m_opt.axes.value();
+			switch (v)
+			{
+			case PlotAxes::x1y1:
+				os << "x1y1";
+				break;
+			case PlotAxes::x1y2:
+				os << "x1y2";
+				break;
+			case PlotAxes::x2y1:
+				os << "x2y1";
+				break;
+			case PlotAxes::x2y2:
+				os << "x2y2";
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 
@@ -344,12 +370,16 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions)
+	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions)
 	{
-		// temporary buffer
-		DataBuffer buffer;
+		Plot2d plot;
 
-		auto options = (PlotOptions)singlePlotOptions;
+		// buffer with 1 column
+		plot.pBuffer = std::make_unique<DataBuffer>(1);
+		auto& buffer = *plot.pBuffer.get();
+
+		plot.pOptions = std::make_unique<PlotOptions>((PlotOptions)singlePlotOptions);
+		auto& options = *plot.pOptions.get();
 
 		if (singlePlotOptions.spacing)
 		{
@@ -367,7 +397,85 @@ namespace lc
 			options.cols = { 0 };
 		}
 
-		this->plot(buffer, options);
+		return plot;
+	}
+
+	// TODO move
+	void m_forEachPlot(std::list<Gnuplotpp::Plot2dRef> plots, std::function<void(Gnuplotpp::Plot2d&, bool first)> func)
+	{
+		using Plot2d = Gnuplotpp::Plot2d;
+
+		for (auto it = plots.begin(); it != plots.end(); it++)
+		{
+			Plot2d* m_pPlot = nullptr;
+			{
+				if (auto* pRef = std::get_if<std::reference_wrapper<Plot2d>>(&*it))
+					m_pPlot = &pRef->get();
+				if (auto* pPtr = std::get_if<std::shared_ptr<Plot2d>>(&*it))
+				{
+					if (!*pPtr)
+						continue;
+					m_pPlot = pPtr->get();
+				}
+			}
+			Plot2d& plot = *m_pPlot;
+
+			func(plot, it == plots.begin());
+		}
+	}
+
+	void Gnuplotpp::render(std::list<Plot2dRef> plots)
+	{
+		// alias "gnuplot"
+		auto& gp = *this;
+
+		m_forEachPlot(plots, [&](Plot2d& plot, bool first)
+			{
+				if (plot.pOptions)
+				{
+					plot.pSerializer = std::make_unique<PlotOptionsSerializer>(*plot.pOptions.get());
+					plot.pSerializer->prepare(gp);
+				}
+			}
+		);
+
+		gp << "plot";
+
+		m_forEachPlot(plots, [&](Plot2d& plot, bool first)
+			{
+				if (!first)
+					gp << ",";
+
+				_TMP_GNUPLOTPP_SPACE(gp);
+				if (plot.pBuffer)
+					gp << "'-'";
+
+				if (plot.pSerializer)
+				{
+					_TMP_GNUPLOTPP_SPACE(gp);
+					plot.pSerializer->print(gp);
+				}
+			}
+		);
+
+		// passing data to gnuplot
+		// see https://stackoverflow.com/questions/3318228/how-to-plot-data-without-a-separate-file-by-specifying-all-points-inside-the-gnu
+		m_forEachPlot(plots, [&](Plot2d& plot, bool first)
+			{
+				if (plot.pBuffer)
+				{
+					// data on new line
+					gp << std::endl;
+
+					// write the data
+					gp << *plot.pBuffer.get();
+
+					// tell End Of Data
+					gp << Datablock_EOD << std::endl;
+					//gp << Datablock_E << std::endl;// <- this would do the same
+				}
+			}
+		);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -385,9 +493,9 @@ namespace lc
 		
 		// start the plot commandline, we insert '-' to tell gnuplot to use
 		// a datablock that we will write later
-		if (options.replot)
-			gp << "replot '-'";
-		else
+		//if (options.replot)
+		//	gp << "replot '-'";
+		//else
 			gp << "plot '-'";
 
 		optionsSerializer.print(gp);

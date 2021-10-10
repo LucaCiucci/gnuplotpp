@@ -15,8 +15,11 @@ LC_NOTICE_END -->
 ## Methods:
 
 Constructors:
- - [`Gnuplotpp::Gnuplotpp()`](#gnuplotppgnuplotpp)
- - [`Gnuplotpp::Gnuplotpp(bool pesrist)`](#ciao)
+ - [`Gnuplotpp()`](#gnuplotppgnuplotpp)
+ - [`Gnuplotpp(bool pesrist)`](#ciao)
+
+Plot creation
+ - [`Plot2d Gnuplotpp::plot()`]()
 
 ## Detailed descriptions
 
@@ -27,5 +30,14 @@ Constructors:
 <summary>Default constructor</summary>
 
 This is the default constructor, it is the equivalent of telling `persist = true`
+
+</details>
+
+#### `Gnuplotpp::Gnuplotpp(bool pesrist)`
+
+<details>
+<summary>Default constructor</summary>
+
+If `persist` is `true`, Gnuplot is started with `--persist` option
 
 </details>

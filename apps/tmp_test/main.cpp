@@ -23,7 +23,7 @@ LC_NOTICE_END */
 
 int safe_main(int argc, char** argv);
 
-int main(int argc, char** argv)
+int main_(int argc, char** argv)
 {
 	try
 	{
@@ -45,11 +45,50 @@ int safe_main(int argc, char** argv)
 {
 	using lc::Gnuplotpp;
 
-	lc::Gnuplotpp gnuplot(std::ofstream("a.p"));
-	//lc::Gnuplotpp gnuplot;
+	//lc::Gnuplotpp gnuplot(std::ofstream("a.p"));
+	lc::Gnuplotpp gnuplot;
+
+	const auto cmd = R"qwerty(
+plot '-' pt 6 ps 5, '-' pt 3 ps 5
+1
+3
+2
+1
+EOF
+2
+5
+6
+2
+3
+EOF
+)qwerty";
+
+	gnuplot << cmd << std::endl;
+
+	int a;
+	std::vector<std::variant<std::reference_wrapper<int>, char>> va = { a, a, a, a, 'a' };
+	va.push_back(a);
+	for (int i = 0; i < va.size(); i++)
+		std::cout << va[i].index() << std::endl;
+
+	Gnuplotpp::SinglePlotOptions opt;
+	opt.lineStyle = Gnuplotpp::LineStyle();
+	opt.marker = Gnuplotpp::Marker();
+	opt.marker.value().pointSize = 3;
+	opt.lineStyle.value().lineColor = "red";
+	opt.marker.value().pointType = Gnuplotpp::PointType::Cross;
+	auto plot1 = gnuplot.plot({ 1, 2, 3, 2, 2, 2, 0, 1, 1, 1, 2 }, opt);
+	opt.lineStyle.value().lineColor = "green";
+	opt.lineStyle.value().dashType = "-";
+	opt.marker.value().pointType = Gnuplotpp::PointType::Star;
+	opt.axes = Gnuplotpp::PlotAxes::x1y2;
+	auto plot2 = gnuplot.plot({ 1, 2, 3, 2, 2, 2, 10, 1, 1, 2, 2 }, opt);
+	gnuplot.render({ plot1, plot2 });
+
+	return 0;
 
 	//gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
-	gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;;
+	gnuplot << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
 	//gnuplot.plot_tmp({1, 2, 3, 2, 1});
 
 	lc::Gnuplotpp::DataBuffer buffer;
@@ -130,14 +169,31 @@ int safe_main(int argc, char** argv)
 		gnuplot.plot(data/*, options*/);
 		//gnuplot2.plot(data, options);
 
+		//gnuplot << "set multiplot" << std::endl;
 		gnuplot.plot(
 			// DATA
 			{ 1, 3, 2, 2, 1, 0 },
 			{
-				.title="a",
-				.lineStyle = Gnuplotpp::LineStyle{ .lineColor = "red"}
+				.lineStyle = Gnuplotpp::LineStyle{ .lineColor = "red" },
+				.marker = Gnuplotpp::Marker {
+					.pointType = Gnuplotpp::PointType::Star,
+					//.pointSize = 2.0
+				},
 			}
 		);
+		gnuplot.plot(
+			// DATA
+			{ 1, 3, 2, 4, 1, 0 },
+			{
+				.lineStyle = Gnuplotpp::LineStyle{.lineColor = "blue" },
+				.marker = Gnuplotpp::Marker {
+					.pointType = Gnuplotpp::PointType::Star,
+					//.pointSize = 2.0
+				},
+				//.replot=true
+			}
+			);
+		//gnuplot << "unset multiplot" << std::endl;
 	}
 	if (0)
 	{
