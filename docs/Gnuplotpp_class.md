@@ -16,20 +16,16 @@ LC_NOTICE_END -->
 
 Constructors:
  - [`Gnuplotpp::Gnuplotpp()`](#gnuplotppgnuplotpp)
- - [`Gnuplotpp::Gnuplotpp()`](#ciao)
+ - [`Gnuplotpp::Gnuplotpp(bool pesrist)`](#ciao)
 
 ## Detailed descriptions
 
 ### Constructors
 
 #### `Gnuplotpp::Gnuplotpp()`
-<details style="padding-left : 1em; border-left : solid 1px rgb(128, 128, 128)">
-<summary>aaaaa</summary>
-
-aaaaaa
-</details>
-
 <details>
-    <summary>Details</summary>
-    Something small enough to escape casual notice.
+<summary>Default constructor</summary>
+
+This is the default constructor, it is the equivalent of telling `persist = true`
+
 </details>
