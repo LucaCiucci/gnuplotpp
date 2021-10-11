@@ -42,7 +42,7 @@ namespace lc
 			std::clog << "Opening gnuplot... ";
 
 			// open the pipe
-			m_pipe = _LC_GNUPLOT_POPEN(persist ? "gnuplot -persist" : "gnuplot", "w");
+			m_pipe = _LC_GNUPLOT_POPEN(persist ? "gnuplot --persist" : "gnuplot", "w");
 
 			if (!m_pipe)
 			{
@@ -50,7 +50,7 @@ namespace lc
 				return false;
 			}
 			std::clog << "succeded." << std::endl;
-			(std::fstream&)(*this) = std::move(std::fstream(m_pipe));
+			(std::ofstream&)(*this) = std::move(std::ofstream(m_pipe));
 
 			return (bool)m_pipe;
 		}
