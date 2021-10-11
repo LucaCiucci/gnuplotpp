@@ -39,7 +39,7 @@ If you don't know how to use *C++*, take a look at [IDontKnowCpp](./docs/IDontKn
 ## Usage
 Using the `Gnuplotpp` class is extremely esasy.
 
-Take a look at the [Including](./docs/Including.md) guide to discover how you can use the _Gnuplot++_ library in your project, then read the [Quick Start guide](./docs/QuickStart.md) to rapidly start using the library
+Take a look at the [Including](./docs/BuildAndInstall.md) guide to discover how you can use the _Gnuplot++_ library in your project, then read the [Quick Start guide](./docs/QuickStart.md) to rapidly start using the library
 
 You can send commands like you would do in the gnuplot shell:
 ```cpp
