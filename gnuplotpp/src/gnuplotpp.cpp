@@ -396,6 +396,8 @@ namespace lc
 
 		if (outFile)
 			gp << "set output \"" << outFile.value() << "\"" << std::endl;
+
+		// http://www.math.utk.edu/~vasili/refs/How-to/gnuplot.print.html
 	}
 
 	////////////////////////////////////////////////////////////////
