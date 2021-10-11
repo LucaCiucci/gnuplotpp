@@ -20,7 +20,7 @@ jobs:
     #- name: configure
       #run: ./configure
       #run: cmake .
-    - run: cmake.
+    - run: cmake .
       env :
         CC:   gcc-10
         CXX:  g++-10
