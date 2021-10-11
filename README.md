@@ -13,7 +13,7 @@ LC_NOTICE_END -->
 <!-- https://github.com/badges/shields/blob/master/README.md -->
 <!-- https://shields.io/ -->
 
-# *Gnuplot++* ![GitHub](https://img.shields.io/github/license/LucaCiucci/gnuplotpp) ![GitHub issues](https://img.shields.io/github/issues/LucaCiucci/gnuplotpp) ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LucaCiucci/gnuplotpp) [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4)
+# *Gnuplot++* ![GitHub](https://img.shields.io/github/license/LucaCiucci/gnuplotpp) ![GitHub issues](https://img.shields.io/github/issues/LucaCiucci/gnuplotpp) ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LucaCiucci/gnuplotpp) ![GitHub top language](https://img.shields.io/github/languages/top/LucaCiucci/gnuplotpp) [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4)
 A simple C++ Gnuplot interface.
 
 
