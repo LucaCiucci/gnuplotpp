@@ -30,7 +30,7 @@ cmake_minimum_required (VERSION 3.20)
 ################################################################
 
 option(GNUPLOTPP_HEADER_ONLY "build and install as header only library" OFF)
-option(GNUPLOTPP_USE_LC_LIBRARY "use the lc library" ON)
+option(GNUPLOTPP_USE_LC_LIBRARY "use the lc library" OFF)
 
 ################################################################
 #                          PROJECT
