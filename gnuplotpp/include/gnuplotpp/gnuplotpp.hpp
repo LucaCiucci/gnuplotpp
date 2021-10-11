@@ -22,6 +22,7 @@ LC_NOTICE_END */
 #include <optional>
 #include <list>
 #include <memory>
+#include <concepts>
 
 #if defined(_WIN32) || defined (_MSVC_VER)
 #include <Windows.h>
