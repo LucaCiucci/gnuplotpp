@@ -23,6 +23,8 @@ Make sure to [install Gnuplot](http://www.gnuplot.info/download.html) before usi
 
 Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf) and the [gnuplot++ wiki](https://github.com/LucaCiucci/gnuplotpp/wiki).
 
+If you don't know how to use *C++*, take a look at [IDontKnowCpp](./docs/IDontKnowCpp.md) guide
+
 ## Features
 
  - extremely simple and easy to use
@@ -52,6 +54,10 @@ Gnuplotpp gp;
 auto myPlot = gnuplot.plot({ 1, 2, 3, 2 });
 gp.render({ myPlot });
 ```
+
+## Why *Gnuplot*
+
+## Why not *Gnuplot*
 
 ## Contributing
 
