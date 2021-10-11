@@ -70,7 +70,7 @@ Gnuplotpp gp;
 auto myPlot = gnuplot.plot({ 1, 2, 3, 2 });
 
 // actually renders the plot
-gp.render({ myPlot });
+gp.draw({ myPlot });
 ```
 
 ### Example
@@ -98,8 +98,8 @@ int main(int argc, char** argv)
     // create a plot
     auto myPlot = gp.plot(data);
     
-    // render the plot
-    gp.render({ myPlot });
+    // draw the plot
+    gp.draw({ myPlot });
 
     return 0;
 }
@@ -141,7 +141,7 @@ auto myPlot = gp.plot(
         .marker = marker
     }
 );
-gp.render({ myPlot });
+gp.draw({ myPlot });
 ```
 
 ![](./img/basic_plot_002.PNG)
