@@ -19,6 +19,8 @@ LC_NOTICE_END */
 #include <variant>
 #include <sstream>
 #include <map>
+#include <functional>
+#include <optional>
 
 #if defined(_WIN32) || defined (_MSVC_VER)
 #include <Windows.h>
@@ -126,17 +128,17 @@ namespace lc
 	//                       GNUPLOT++ INTERFACE
 	// ================================================================
 
+	// This is the main Gnuplot++ class.s
 	// TODO on a custom stream instead of pipe
 	class Gnuplotpp : public _gnuplot_impl_::GnuplotPipe
 	{
 	public:
 
-		struct Vector2d
-		{
-			double x = 0, y = 0;
-		};
+		// ================================
+		//        STATIC CONSTANTS
+		// ================================
 
-		class DataBuffer;
+		// ====== special sequences =======
 
 		// "e"
 		static const char* Datablock_E;
@@ -146,6 +148,37 @@ namespace lc
 
 		// "EOD"
 		static const char* Datablock_EOD;
+
+		// ================================
+		//        SUB-CLASSES/ENUMS
+		// ================================
+		// (see de definition of this stuff for additional info)
+
+		// ========== geometry ============
+
+		// If the LC library is included, Vector2d = lc::Vector2d, otherwise
+		// we define a custom struct
+#ifdef _GNUPLOTPP_USE_LC_LIBRARY
+		using Vector2d = lc::Vector2d;
+#else
+		// This class represents a 2 dimensianl vector of double
+		struct Vector2d
+		{
+			// ================================
+			//            COORDINATES
+			// ================================
+
+			// TODO as access funcions
+			double x = 0;
+			double y = 0;
+		};
+#endif
+
+		// =========== buffers ============
+
+		class DataBuffer;
+
+		// ============ ... ===============
 
 		enum class ErrorBar
 		{
@@ -372,10 +405,10 @@ namespace lc
 			explicit operator PlotOptions() const
 			{
 				return {
-					.title = title,
+					.title     = title,
 					.lineStyle = lineStyle,
-					.marker = marker,
-					.axes = axes
+					.marker    = marker,
+					.axes      = axes
 				};
 			};
 		};
