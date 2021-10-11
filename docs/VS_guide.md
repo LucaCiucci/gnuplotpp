@@ -73,7 +73,7 @@ Select `Build->Install gnuplotpp`.
 
 ## Using the library from an external project
 
-Create a new CMake project as described in [BuildAndInstall](BuildAndInstall), use the above steps to open the new project and you are ready to go!
+Create a new CMake project as described in [BuildAndInstall](BuildAndInstall.md), use the above steps to open the new project and you are ready to go!
 
 Note that to run an executable target you can click the Run button, for example:
 

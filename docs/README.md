@@ -15,9 +15,9 @@ LC_NOTICE_END -->
 ## Guides/documentation
 
 Some important files:
-- [QuickStart](QuickStart)
-- [usage](usage)
-- [VS_guide](VS_guide)
-- [BuildAndInstall](BuildAndInstall)
-- [IDontKnowCpp](IDontKnowCpp)
-- [Gnuplotpp_class](Gnuplotpp_class)
+- [QuickStart](QuickStart.md)
+- [usage](usage.md)
+- [VS_guide](VS_guide.md)
+- [BuildAndInstall](BuildAndInstall.md)
+- [IDontKnowCpp](IDontKnowCpp.md)
+- [Gnuplotpp_class](Gnuplotpp_class.md)
