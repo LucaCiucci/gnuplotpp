@@ -371,7 +371,7 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setTerm(Term term, std::optional<std::string> outFile)
+	void Gnuplotpp::setTerm(Term term, std::optional<std::string> outFile, std::optional<Vector2i> size)
 	{
 		auto& gp = *this;
 
@@ -383,10 +383,16 @@ namespace lc
 		case Term::None:
 			break;
 		case Term::Qt:
-			gp << "set term qt" << std::endl;
+			gp << "set term qt";
+			if (size)
+				gp << " size " << size.value().x << ", " << size.value().y;
+			gp << std::endl;
 			break;
 		case Term::PNG:
 			gp << "set term png" << std::endl;
+			if (size)
+				gp << " size " << size.value().x << ", " << size.value().y;
+			gp << std::endl;
 			if (!outFile)
 				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
 			break;
@@ -589,6 +595,8 @@ namespace lc
 
 	void Gnuplotpp::draw(std::list<Plot2dRef> plots)
 	{
+		// TODO chack not empty
+
 		// alias "gnuplot"
 		auto& gp = *this;
 
@@ -620,6 +628,8 @@ namespace lc
 				}
 			}
 		);
+
+		gp << std::endl;
 
 		// passing data to gnuplot
 		// see https://stackoverflow.com/questions/3318228/how-to-plot-data-without-a-separate-file-by-specifying-all-points-inside-the-gnu
@@ -745,6 +755,49 @@ namespace lc
 		*/
 
 		return v;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::setPlotOrigin(const Vector2d& pos)
+	{
+		*this << "set origin " << pos.x << ", " << pos.y << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::setPlotOrigin(void)
+	{
+		*this << "unset origin" << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::setPlotSize(const Vector2d& pos)
+	{
+		*this << "set size " << pos.x << ", " << pos.y << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::setPlotSize(void)
+	{
+		*this << "unset size" << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::beginMultiplot(size_t rows, size_t cols)
+	{
+		*this << "set multiplot layout " << rows << ", " << cols << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::endMultiplot(void)
+	{
+		*this << "unset multiplot" << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::MultiplotGuard Gnuplotpp::multiplot(size_t rows, size_t cols)
+	{
+		this->beginMultiplot(rows, cols);
+		return MultiplotGuard(this);
 	}
 
 	// ================================================================

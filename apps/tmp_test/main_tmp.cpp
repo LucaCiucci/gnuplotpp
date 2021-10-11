@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     //Gnuplotpp gp(std::ofstream("a.p"));
     Gnuplotpp gp;
 
-    gp.setTerm(Gnuplotpp::Term::PNG);
+    //gp.setTerm(Gnuplotpp::Term::Qt);
 
     Gnuplotpp::LineStyle lineStyle;
     lineStyle.lineColor = "red";
@@ -38,7 +38,23 @@ int main(int argc, char** argv)
 
     myPlot = gp.errorbar({ .y = y, .x = x, .yErr = dy, .xErr = dx }, { .marker = markerStyle });
 
-    gp.draw({ myPlot });
+    //gp << "set multiplot layout 2, 2" << std::endl;
+    //gp << "set multiplot" << std::endl;
+    //gp << "set size 0.5,0.5" << std::endl;
+    //gp << "set origin 0.0, 0.5" << std::endl;
+
+    gp.setTerm(Gnuplotpp::Term::PNG, "a.png");
+    if (auto multiplot = gp.multiplot(2, 1))
+    {
+        double p = 1.0/3;
+
+        gp.setPlotOrigin({ 0, p });
+        gp.setPlotSize({ 1, 1 - p });
+        gp.draw({ myPlot });
+
+        gp.setPlotSize({ 1, p });
+        gp.draw({ myPlot });
+    }
 
     return 0;
 }

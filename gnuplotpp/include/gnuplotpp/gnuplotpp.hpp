@@ -47,6 +47,22 @@ namespace lc
 			NonCopyable(NonCopyable&&) = default;
 		};
 
+		// https://github.com/LucaCiucci/LC/blob/master/include/LC/utils/types/ScopeGuard/ScopeGuard
+		class ScopeGuard : NonCopyable
+		{
+		public:
+
+			ScopeGuard(ScopeGuard&&) = default;
+			ScopeGuard(std::function<void(void)> cleanup_function = []() {}) : m_cleanup_fcn(cleanup_function) {}
+			~ScopeGuard() { if (m_cleanup_fcn) m_cleanup_fcn(); }
+
+			void setFunction(std::function<void(void)> cleanup_function = []() {}) { m_cleanup_fcn = cleanup_function; }
+			void release(void) { m_cleanup_fcn = {}; };
+
+		private:
+			std::function<void(void)> m_cleanup_fcn;
+		};
+
 		// ================================================================
 		//                         GNUPLOT PIPE
 		// ================================================================
@@ -164,12 +180,28 @@ namespace lc
 		struct Vector2d
 		{
 			// ================================
-			//            COORDINATES
+			//           COORDINATES
 			// ================================
 
 			// TODO as access funcions
 			double x = 0;
 			double y = 0;
+		};
+#endif
+
+#ifdef _GNUPLOTPP_USE_LC_LIBRARY
+		using Vector2d = lc::Vector2i;
+#else
+		// This class represents a 2 dimensianl vector of int
+		struct Vector2i
+		{
+			// ================================
+			//           COORDINATES
+			// ================================
+
+			// TODO as access funcions
+			int x = 0;
+			int y = 0;
 		};
 #endif
 
@@ -364,6 +396,13 @@ namespace lc
 			PNG
 		};
 
+		struct MultiplotGuard final : private _gnuplot_impl_::ScopeGuard
+		{
+			MultiplotGuard(Gnuplotpp* pGp) : ScopeGuard([pGp]() { pGp->endMultiplot(); }) {};
+			operator bool() const { return true; };
+			friend class Gnuplotpp;
+		};
+
 		// ================================
 		//          CONSTRUCTORS
 		// ================================
@@ -390,7 +429,7 @@ namespace lc
 
 		void resetSession(void);
 
-		void setTerm(Term term = Term::None, std::optional<std::string> outFile = {});
+		void setTerm(Term term = Term::None, std::optional<std::string> outFile = {}, std::optional<Vector2i> size = {});
 
 		struct SinglePlotOptions
 		{
@@ -413,10 +452,10 @@ namespace lc
 			explicit operator PlotOptions() const
 			{
 				return {
-					.title     = title,
-					.lineStyle = lineStyle,
-					.marker    = marker,
-					.axes      = axes
+					.title      = title,
+					.lineStyle  = lineStyle,
+					.marker     = marker,
+					.axes       = axes
 				};
 			};
 		};
@@ -479,6 +518,17 @@ namespace lc
 		void setGridOptions(GridOptions options);
 
 		Vector2d getMouseClick(void);
+
+		void setPlotOrigin(const Vector2d& pos);
+		void setPlotOrigin(void);
+
+		void setPlotSize(const Vector2d& pos);
+		void setPlotSize(void);
+
+		void beginMultiplot(size_t rows, size_t cols);
+		void endMultiplot(void);
+
+		MultiplotGuard multiplot(size_t rows, size_t cols);
 
 #ifdef _GNUPLOTPP_USE_LC_LIBRARY
 
