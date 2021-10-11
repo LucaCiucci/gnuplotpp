@@ -12,4 +12,14 @@ LC_NOTICE_END -->
 
 # TODOs
 
+- [x] single 2d plot
+- [x] multiple 2d plot
+- [ ] plotList
+- [ ] plot3d
+- [ ] multiple plot3d
+- [ ] out on file
+- [ ] out on arbitrary `ostream`
+- [ ] python interface
+- [ ] lc support
+- [ ] `IDontKonwCpp.md`
 - [ ] online interactive c++ examples, see [respawned, gnuplot online](http://gnuplot.respawned.com/)
