@@ -13,13 +13,13 @@ LC_NOTICE_END -->
 <!-- https://github.com/badges/shields/blob/master/README.md -->
 <!-- https://shields.io/ -->
 
-# gnuplot++ ![GitHub](https://img.shields.io/github/license/LucaCiucci/gnuplotpp) ![GitHub issues](https://img.shields.io/github/issues/LucaCiucci/gnuplotpp) ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LucaCiucci/gnuplotpp) [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4)
+# *Gnuplot++* ![GitHub](https://img.shields.io/github/license/LucaCiucci/gnuplotpp) ![GitHub issues](https://img.shields.io/github/issues/LucaCiucci/gnuplotpp) ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LucaCiucci/gnuplotpp) [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4)
 A simple C++ Gnuplot interface.
 
 
 This is a very simple library that allows you to call the [Gnuplot](http://www.gnuplot.info/) program from C++ code using a pipe.
 
-Make sure to [install Gnuplot](http://www.gnuplot.info/download.html) before using this library (on Windows you have to add Gnuplot to path by selecting the option during installation or by adding the bin folder to PATH by hand). To test your gnuplot installation you can open a terminal and type `gnuplot --version`.
+Make sure to [install Gnuplot](http://www.gnuplot.info/download.html) before using this library (on Windows you have to add Gnuplot to PATH by selecting the option during installation or by adding the bin folder to PATH by hand). To test your gnuplot installation you can open a terminal and type `gnuplot --version`.
 
 Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf) and the [gnuplot++ wiki](https://github.com/LucaCiucci/gnuplotpp/wiki).
 
@@ -30,7 +30,7 @@ If you don't know how to use *C++*, take a look at [IDontKnowCpp](./docs/IDontKn
  - extremely simple and easy to use
  - no need of knowing gnuplot syntax
  - simple `std::cout` like interaction for sending commands using the `<<` operator
- - modern `C++` style interation using high level functions
+ - modern `C++` style interation using high level of abstraction functions
  - no messing with Gnuplot indices
  - no temporary data files needed
  - easy plot customization
@@ -57,15 +57,21 @@ gp.render({ myPlot });
 
 ## Why *Gnuplot*
 
+TODO
+
 ## Why not *Gnuplot*
 
+TODO
+
 ## Contributing
+
+ - read [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 You can **fork** the project and create your own version.
 
 If you want to tell a problem, suggest a feature or request assistance for a problem that can be shared, create an **issue**.
 
-If you want to directly contribute to the main project, create a **fork** and then create a pull request that I will review. Please, read the rules in the [`CONTRIBUTING.md`](CONTRIBUTING.md) file befor creating a pull request.
+If you want to directly contribute to the main project, create a **fork** and then create a pull request that I will review. Please, read the rules in the [`CONTRIBUTING.md`](CONTRIBUTING.md) file before creating a pull request.
 
 If you appreciate my work, please consider making a donation using the [Donate](https://www.paypal.com/donate?hosted_button_id=6WDUWJUNWKKP4) button: **STUDENTS NEED COFFEE :coffee:**
 
