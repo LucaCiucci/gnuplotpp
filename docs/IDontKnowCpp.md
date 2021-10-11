@@ -324,3 +324,36 @@ You can run the generated output typing on the command line:
 ```sh
 gnuplot --persist "myfile.p"
 ```
+
+## Safe Main
+
+Some code may throw exceptions, I often write a `main` like [this](https://gist.github.com/LucaCiucci/1a894fa69e20f603dd088ad643cd7600):
+```cpp
+int safe_main(int argc, char** argv);
+
+int main(int argc, char** argv)
+{
+    try
+    {
+        return safe_main(argc, argv);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Uncaught Exception thrown from safe_main(): " << e.what() << std::endl;
+    }
+    catch (...)
+    {
+        std::cerr << "Uncaught Unknown Exception thrown from safe_main()" << std::endl;
+    }
+    return EXIT_FAILURE;
+}
+
+int safe_main(int argc, char** argv)
+{
+    std::cout << "Hello There!" << std::endl;
+    /*
+    your code goes here
+    */
+    return 0;
+}
+```
