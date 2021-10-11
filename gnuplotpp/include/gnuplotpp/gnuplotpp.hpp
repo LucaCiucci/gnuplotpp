@@ -357,6 +357,13 @@ namespace lc
 			friend class Gnuplotpp;
 		};
 
+		enum class Term
+		{
+			None,
+			Qt,
+			PNG
+		};
+
 		// ================================
 		//          CONSTRUCTORS
 		// ================================
@@ -382,6 +389,8 @@ namespace lc
 		void sendLine(const std::string& line);
 
 		void resetSession(void);
+
+		void setTerm(Term term = Term::None, std::optional<std::string> outFile = {});
 
 		struct SinglePlotOptions
 		{

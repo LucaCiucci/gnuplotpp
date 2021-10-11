@@ -371,6 +371,34 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::setTerm(Term term, std::optional<std::string> outFile)
+	{
+		auto& gp = *this;
+
+		gp << "unset term" << std::endl;
+		gp << "unset output" << std::endl;
+
+		switch (term)
+		{
+		case Term::None:
+			break;
+		case Term::Qt:
+			gp << "set term qt" << std::endl;
+			break;
+		case Term::PNG:
+			gp << "set term png" << std::endl;
+			if (!outFile)
+				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
+			break;
+		default:
+			break;
+		}
+
+		if (outFile)
+			gp << "set output \"" << outFile.value() << "\"" << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
 	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions)
 	{
 		Plot2d plot;
