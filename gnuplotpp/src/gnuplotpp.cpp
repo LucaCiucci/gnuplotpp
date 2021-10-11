@@ -715,10 +715,14 @@ namespace lc
 
 	Gnuplotpp::Vector2d Gnuplotpp::getMouseClick(void)
 	{
+		// TODO read https://docs.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session
+		// https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/
+
 		auto& gp = *this;
 
 		Vector2d v;
 
+		/*
 		gp << "set mouse" << std::endl;
 		gp << "set mouse" << std::endl;
 
@@ -740,6 +744,7 @@ namespace lc
 		//gp >> v.x;
 		gp << "if (exists(\"MOUSE_Y\")) print MOUSE_Y; else print 0;" << std::endl;
 		//gp >> v.y;
+		*/
 
 		return v;
 	}

@@ -46,6 +46,12 @@ namespace lc
 			NonCopyable(NonCopyable&&) = default;
 		};
 
+		// ================================================================
+		//                         GNUPLOT PIPE
+		// ================================================================
+
+		// This class represents a pipe to gnuplot. It is a write only pipe
+		// (ofstream). In the future it will be bidirectional.
 		class GnuplotPipe : NonCopyable, public std::ofstream
 		{
 		protected:
@@ -53,10 +59,14 @@ namespace lc
 			class CommandLineIDImpl;
 		protected:
 
+
+			// Init the pipe
 			bool init(bool persist);
 
+			// check if the pipe is open
 			bool isOpen(void) const { return m_pipe; };
 
+			// check if the pipe is open
 			operator bool() const { return this->isOpen(); };
 
 		public:
