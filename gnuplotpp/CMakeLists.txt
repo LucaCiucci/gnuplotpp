@@ -60,6 +60,9 @@ target_include_directories(
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>
 )
 
+# TODO MOVE
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+
 ################################
 #   PREPROCESSOR DEFINITIONS
 ################################
