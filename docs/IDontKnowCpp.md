@@ -21,6 +21,8 @@ Don't warry and read this document for a very short and basic introduction.
 
 Keep in mind that *C++* is (at a very basic level) just *C* with some cool features that help you solve problems fast, as such you can use nearly any notion you learned in *C* (with some exceptions like there is no [VLA](https://en.wikipedia.org/wiki/Variable-length_array))
 
+There are several ways to learn *C++*, it is a quite complex language with an exensive standard library. There are tons of tutorials online and I suggest you to take a look at [SFML](https://www.sfml-dev.org/), it is a simple and yet very well written library that will allow to have some fun with *C++*.
+
 ## What do I need
 
 If you know how to compile *C code*, you probably already have the tools you need to compile *C++ code*.
