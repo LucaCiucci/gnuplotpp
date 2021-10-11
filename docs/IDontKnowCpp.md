@@ -80,7 +80,7 @@ target_sources("myProgram" PRIVATE "main.cpp")
 
 At this point you can use the project using the methods in the previous section. For example in *Visual Studio* you can open the cmake project, select `Build->Build All` and run "myProgram.exe".
 
-## Writing a basig code
+## Writing a basic code
 
 A clasic *C++* main file looks something like this (exactly like in *C*):
 ```Cpp
