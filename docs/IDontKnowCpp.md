@@ -31,7 +31,7 @@ On *Windows* I suggest you to use [Visual Studio](https://visualstudio.microsoft
 
 ## Install *Gnuplot++* library
 
-For a complete guide to installing and including *Gnuplot++*, read [Including](Including). Also read the [Visual Studio tutorial](VS_guide) if you want to use Visual Studio and you don't know what to do.
+For a complete guide to installing and including *Gnuplot++*, read [BuildAndInstall](BuildAndInstall). Also read the [Visual Studio tutorial](VS_guide) if you want to use Visual Studio and you don't know what to do.
 
 ### `make install`
 
@@ -57,7 +57,7 @@ Edit the configuration, select `Show advanced settings` and set `Install directo
 # project setup
 # https://cmake.org/cmake/help/latest/guide/tutorial/index.html
 project(
-    "mySimpleProject" # the project name
+    "mySimpleProject" # your project name
     VERSION 0.0       # your project version
     DESCRIPTION "..." # your project brief description
     LANGUAGES CXX     # languages we will use (C++)

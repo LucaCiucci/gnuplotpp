@@ -18,6 +18,6 @@ Some important files:
 - [QuickStart](QuickStart)
 - [usage](usage)
 - [VS_guide](VS_guide)
-- [Including](Including)
+- [BuildAndInstall](BuildAndInstall)
 - [IDontKnowCpp](IDontKnowCpp)
 - [Gnuplotpp_class](Gnuplotpp_class)
