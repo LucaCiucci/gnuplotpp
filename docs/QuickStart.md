@@ -21,7 +21,7 @@ The first step is to include gnuplot in your project. There are several ways to 
 find_package(gnuplotpp REQUIRED)
 target_link_libraries(your_target_name PUBLIC gnuplotpp) # or PRIVATE
 ```
-For other ways to use _Gnuplot++_ in your project, read the [Including](Including.md) guide.
+For other ways to use _Gnuplot++_ in your project, read the [BuildAndInstall](BuildAndInstall.md) guide.
 
 At this point in your code you can type:
 ```c++

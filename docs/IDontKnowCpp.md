@@ -31,7 +31,7 @@ On *Windows* I suggest you to use [Visual Studio](https://visualstudio.microsoft
 
 ## Install *Gnuplot++* library
 
-For a complete guide to installing and including *Gnuplot++*, read [BuildAndInstall](BuildAndInstall). Also read the [Visual Studio tutorial](VS_guide) if you want to use Visual Studio and you don't know what to do.
+For a complete guide to installing and including *Gnuplot++*, read [BuildAndInstall](BuildAndInstall.md). Also read the [Visual Studio tutorial](VS_guide.md) if you want to use Visual Studio and you don't know what to do.
 
 ### `make install`
 

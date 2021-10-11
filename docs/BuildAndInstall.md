@@ -14,7 +14,7 @@ LC_NOTICE_END -->
 
 In this file you will find a brief description on how to build, install and use the *Gnuplot++* library.
 
-If you are using *Visual Studio*, check [VS_guide](VS_guide).
+If you are using *Visual Studio*, check [VS_guide](VS_guide.md).
 
 ## Requirements
 
