@@ -242,17 +242,17 @@ namespace lc
 			case ErrorBar::X:
 				_TMP_GNUPLOTPP_SPACE(os);
 				os << "with ";
-				os << "xerr";
+				os << ((m_opt.lineStyle) ? "xerrorlines" : "xerr");
 				break;
 			case ErrorBar::Y:
 				_TMP_GNUPLOTPP_SPACE(os);
 				os << "with ";
-				os << "yerr";
+				os << ((m_opt.lineStyle) ? "yerrorlines" : "yerr");
 				break;
 			case ErrorBar::XY:
 				_TMP_GNUPLOTPP_SPACE(os);
 				os << "with ";
-				os << "xyerrorbars";
+				os << ((m_opt.lineStyle) ? "xyerrorlines" : "xyerrorbars");
 				break;
 			default:
 				break;
@@ -264,8 +264,9 @@ namespace lc
 		{
 			_TMP_GNUPLOTPP_SPACE(os);
 
-			// TODO change ?!?!?
-			os << "with linespoint ";
+			if (!m_opt.errorBars)
+				// TODO change ?!?!?
+				os << "with linespoint ";
 
 			os << "ls " << m_lsSserializer->m_id->id;
 		}
@@ -428,6 +429,110 @@ namespace lc
 		return plot;
 	}
 
+	Gnuplotpp::Plot2d Gnuplotpp::errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions)
+	{
+		Plot2d plot;
+
+		plot.pOptions = std::make_unique<PlotOptions>((PlotOptions)singlePlotOptions);
+		auto& options = *plot.pOptions.get();
+
+		struct ColumnIndices
+		{
+			std::optional<size_t> x, y, dx, dy;
+		};
+		ColumnIndices indices;
+
+		{
+			double spacing = singlePlotOptions.spacing ? singlePlotOptions.spacing.value() : 1;
+			if (data.x.size() <= 0)
+				for (size_t i = 0; i < data.y.size(); i++)
+					data.x.push_back(i * spacing);
+		}
+
+		size_t indicesCounter = 0;
+		{
+			if (data.x.size() > 0)
+				indices.x = indicesCounter++;
+			indices.y = indicesCounter++;
+			if (data.xErr.size() > 0)
+				indices.dx = indicesCounter++;
+			if (data.yErr.size() > 0)
+				indices.dy = indicesCounter++;
+		}
+
+		if ((!indices.dx) && (!indices.dy))
+			throw std::runtime_error("Gnuplotpp::errorbar() requires errors on at least one axis");
+		if (indices.x)
+			if (data.x.size() != data.y.size())
+				throw std::runtime_error(
+					(std::string)"in Gnuplotpp::errorbar(), data.x.size() must be equal to data.y.size() but sizes were: "
+					+ std::to_string(data.x.size()) + ", " + std::to_string(data.y.size()));
+		if (indices.dx)
+			if (data.xErr.size() > 1)
+				if (data.xErr.size() != data.y.size())
+					throw std::runtime_error(
+						(std::string)"in Gnuplotpp::errorbar(), data.xErr.size() must be equal to data.y.size() or a single value but sizes were: "
+						+ std::to_string(data.xErr.size()) + ", " + std::to_string(data.y.size()));
+		if (indices.dy)
+			if (data.yErr.size() > 1)
+				if (data.yErr.size() != data.y.size())
+					throw std::runtime_error(
+						(std::string)"in Gnuplotpp::errorbar(), data.yErr.size() must be equal to data.y.size() or a single value but sizes were: "
+						+ std::to_string(data.yErr.size()) + ", " + std::to_string(data.y.size()));
+
+		{
+			if (indices.dx)
+				options.errorBars = ErrorBar::X;
+			if (indices.dy)
+				options.errorBars = ErrorBar::Y;
+			if (indices.dx && indices.dy)
+				options.errorBars = ErrorBar::XY;
+		}
+
+		auto buildErrs = [&](std::vector<double>& v) -> void
+		{
+			if (v.size() == 1)
+			{
+				v.resize(data.y.size());
+				std::fill(v.begin(), v.end(), v.front());
+			}
+		};
+		buildErrs(data.xErr);
+		buildErrs(data.yErr);
+
+		plot.pBuffer = std::make_unique<DataBuffer>(indicesCounter);
+		auto& buffer = *plot.pBuffer.get();
+
+		{
+			auto& cols = options.cols;
+			cols.clear();
+			if (indices.x) cols.push_back(indices.x.value());
+			if (indices.y) cols.push_back(indices.y.value());
+			if (indices.dx) cols.push_back(indices.dx.value());
+			if (indices.dy) cols.push_back(indices.dy.value());
+		}
+		for (size_t i = 0; i < data.y.size(); i++)
+		{
+			if (indices.x)
+				buffer << data.x[i];
+
+			if (indices.y)
+				buffer << data.y[i];
+
+			if (indices.dx)
+				buffer << data.xErr[i];
+
+			if (indices.dy)
+				buffer << data.yErr[i];
+
+			buffer << endRow;
+		}
+
+		// TODO singlePlotOptions.spacing
+
+		return plot;
+	}
+
 	// TODO move
 	void m_forEachPlot(std::list<Gnuplotpp::Plot2dRef> plots, std::function<void(Gnuplotpp::Plot2d&, bool first)> func)
 	{
@@ -504,143 +609,6 @@ namespace lc
 				}
 			}
 		);
-	}
-
-	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::plot(DataBuffer& buffer, const PlotOptions& options)
-	{
-		// TODO quando esco usa uno scope exit per annullare gnuplot, oppure
-		// usa uno stringstream e poi passa tutto... ma potrebbe occupare troppa memoria
-
-		// alias "gnuplot"
-		auto& gp = *this;
-		//std::stringstream gp;
-
-		PlotOptionsSerializer optionsSerializer(options);
-		optionsSerializer.prepare(gp);
-		
-		// start the plot commandline, we insert '-' to tell gnuplot to use
-		// a datablock that we will write later
-		//if (options.replot)
-		//	gp << "replot '-'";
-		//else
-			gp << "plot '-'";
-
-		optionsSerializer.print(gp);
-
-		// passing data to gnuplot
-		// see https://stackoverflow.com/questions/3318228/how-to-plot-data-without-a-separate-file-by-specifying-all-points-inside-the-gnu
-		{
-			// data on new line
-			gp << std::endl;
-			
-			// write the data
-			gp << buffer;
-
-			// tell End Of Data
-			gp << Datablock_EOD << std::endl;
-			//gp << Datablock_E << std::endl;// <- this would do the same
-		}
-
-		//std::cout << gp.str() << std::endl;
-	}
-
-	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions)
-	{
-		auto options = (PlotOptions)singlePlotOptions;
-
-		struct ColumnIndices
-		{
-			std::optional<size_t> x, y, dx, dy;
-		};
-		ColumnIndices indices;
-
-		{
-			double spacing = singlePlotOptions.spacing ? singlePlotOptions.spacing.value() : 1;
-			if (data.x.size() <= 0)
-				for (size_t i = 0; i < data.y.size(); i++)
-					data.x.push_back(i * spacing);
-		}
-
-		size_t indicesCounter = 0;
-		{
-			if (data.x.size() > 0)
-				indices.x = indicesCounter++;
-			indices.y = indicesCounter++;
-			if (data.xErr.size() > 0)
-				indices.dx = indicesCounter++;
-			if (data.yErr.size() > 0)
-				indices.dy = indicesCounter++;
-		}
-
-		if ((!indices.dx) && (!indices.dy))
-			throw std::runtime_error("Gnuplotpp::errorbar() requires errors on at least one axis");
-		if (indices.x)
-			if (data.x.size() != data.y.size())
-				throw std::runtime_error(
-					(std::string)"in Gnuplotpp::errorbar(), data.x.size() must be equal to data.y.size() but sizes were: "
-					+ std::to_string(data.x.size()) + ", " + std::to_string(data.y.size()));
-		if (indices.dx)
-			if (data.xErr.size() > 1)
-				if (data.xErr.size() != data.y.size())
-					throw std::runtime_error(
-						(std::string)"in Gnuplotpp::errorbar(), data.xErr.size() must be equal to data.y.size() or a single value but sizes were: "
-						+ std::to_string(data.xErr.size()) + ", " + std::to_string(data.y.size()));
-		if (indices.dy)
-			if (data.yErr.size() > 1)
-				if (data.yErr.size() != data.y.size())
-					throw std::runtime_error(
-						(std::string)"in Gnuplotpp::errorbar(), data.yErr.size() must be equal to data.y.size() or a single value but sizes were: "
-						+ std::to_string(data.yErr.size()) + ", " + std::to_string(data.y.size()));
-
-		{
-			if (indices.dx)
-				options.errorBars = ErrorBar::X;
-			if (indices.dy)
-				options.errorBars = ErrorBar::Y;
-			if (indices.dx && indices.dy)
-				options.errorBars = ErrorBar::XY;
-		}
-
-		auto buildErrs = [&](std::vector<double>& v) -> void
-		{
-			if (v.size() == 1)
-				std::fill(v.begin(), v.end(), v.front());
-		};
-		buildErrs(data.xErr);
-		buildErrs(data.yErr);
-
-		DataBuffer buffer(indicesCounter);
-
-		{
-			auto& cols = options.cols;
-			cols.clear();
-			if (indices.x) cols.push_back(indices.x.value());
-			if (indices.y) cols.push_back(indices.y.value());
-			if (indices.dx) cols.push_back(indices.dx.value());
-			if (indices.dy) cols.push_back(indices.dy.value());
-		}
-		for (size_t i = 0; i < data.y.size(); i++)
-		{
-			if (indices.x)
-				buffer << data.x[i];
-
-			if (indices.y)
-				buffer << data.y[i];
-
-			if (indices.dx)
-				buffer << data.xErr[i];
-
-			if (indices.dy)
-				buffer << data.yErr[i];
-
-			buffer << endRow;
-		}
-
-		// TODO singlePlotOptions.spacing
-
-		this->plot(buffer, options);
 	}
 
 	////////////////////////////////////////////////////////////////

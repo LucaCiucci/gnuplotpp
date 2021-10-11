@@ -439,22 +439,31 @@ namespace lc
 		template <std::convertible_to<double> Ty>
 		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
 
+		struct ErrorbarData
+		{
+			// Y data of the errorbar plot
+			// (required)
+			const std::vector<double> y = {};
+
+			// X data of the orrorbay plot
+			std::vector<double> x = {};
+
+			// Y errors, if a single value is present, errors will be considered homogeneus
+			std::vector<double> yErr = {};
+
+			// X errors, if a single value is present, errors will be considered homogeneus
+			std::vector<double> xErr = {};
+		};
+
+		// Creates an errorbar plot.
+		// Data can be passes through an ErrorbarData struct, at leas one of X or Y errrors
+		// must be present
+		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = {});
+
 		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
 
 		// TOOD description ...
 		void draw(std::list<Plot2dRef> plots);
-
-		// plot a buffer according to the options
-		void plot(DataBuffer& buffer, const PlotOptions& options = {});
-
-		struct ErrorbarData
-		{
-			const std::vector<double> y = {};
-			std::vector<double> x = {};
-			std::vector<double> yErr = {};
-			std::vector<double> xErr = {};
-		};
-		void errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = {});
 
 		void setTicksOptions(TicksOptions options);
 
