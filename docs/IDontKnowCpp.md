@@ -12,14 +12,14 @@ LC_NOTICE_END -->
 
 # I don't know *C++*
 
-The purpose of this library is to provide a simple C++ data pottibg tool using *Gnuplot*.
+The purpose of this library is to provide a simple C++ data plotting tool using *Gnuplot*.
 
-In some courses, for example numerical courses for physics, matematics or engineering you are taught how to implement algorithms, you can choose which language to use and many are familiar with some scripting languages like *Python*. Sometime you may want to use *C* or *C++* for various reasons, usually *C* is taught at a basic level in previous courses, but this library is in *C++*, what should you do?  
+In some courses, for example numerical courses for physics, matematics or engineering, you are taught how to implement algorithms, you can choose which language to use and many are familiar with some scripting languages like *Python*. Sometime you may want to use *C* or *C++* for various reasons, usually *C* is taught at a basic level in previous courses, but this library is in *C++*, what should you do?  
 Don't warry and read this document for a very short and basic introduction.
 
 ## Keep in mind
 
-Keep in mind that *C++* is (at a very basic level) just *C* with some cool features that help you solve problems fast, as such you can use nearly any notion you leared in *C* (with sime exceptions like there is no [VLA](https://en.wikipedia.org/wiki/Variable-length_array))
+Keep in mind that *C++* is (at a very basic level) just *C* with some cool features that help you solve problems fast, as such you can use nearly any notion you learned in *C* (with some exceptions like there is no [VLA](https://en.wikipedia.org/wiki/Variable-length_array))
 
 ## What do I need
 
@@ -31,7 +31,7 @@ On *Windows* I suggest you to use [Visual Studio](https://visualstudio.microsoft
 
 ## Install *Gnuplot++* library
 
-To a complete guide install and including *Gnuplot++*, read [Including](Including). Also read the [Visual Studio tutorial](VS_guide) if you want to use Visual Studio and you don't know what to do.
+For a complete guide to installing and including *Gnuplot++*, read [Including](Including). Also read the [Visual Studio tutorial](VS_guide) if you want to use Visual Studio and you don't know what to do.
 
 ### `make install`
 
@@ -154,8 +154,8 @@ int main(int argc, char** argv)
 
     // We create a Gnuplotpp instance. This opens gnuplot and comunicates
     // using a pipe.
-    // This means create an object (like a variable in C) named 'gp'
-    // with class (type) Gnuplotpp.
+    // This means "create an object (like a variable in C) named 'gp'
+    // with class (type) Gnuplotpp".
     Gnuplotpp gp;
 
     // We can send command to Gnuplot like you would do in the shell (command line)
@@ -200,20 +200,21 @@ int main(int argc, char** argv)
     // Create some objects for random number generation...
 
     // This is the default random engine. You can imagine it works like the
-    // rand() function in C but it is MUCH BETTEr
+    // rand() function in C but it is MUCH BETTER
     std::default_random_engine engine;
 
     // We will generate numbers distributed using the gaussian distribution
     // centered in 10 and with standard deviation (sigma) = 2
     std::normal_distribution<double> generator(10, 2);
 
-    // We thell the vector that we will place N elements, this
-    // will internally allocate space for N elements
+    // We tell the vector that we will place N elements, this
+    // will internally allocate space for N elements so that the insertion
+    // will be faster and less resource expensive
     yData.reserve(N);
 
     // Add data to the vector
     for (size_t i = 0; i < N; i++)
-        // generate a random point calling the generator using the
+        // generate a random doubkle value calling the generator using the
         // defualt random engine
         yData.push_back(generator(engine));
 
