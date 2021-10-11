@@ -104,7 +104,7 @@ EOF
 		gnuplot << "unset grid" << std::endl;
 		gnuplot << "set grid xtics" << std::endl;
 		gnuplot << "set grid mxtics" << std::endl;
-		gnuplot.setGridOptions({ true, true });
+		gnuplot.setGridOptions(Gnuplotpp::GridOptions{ true, true });
 	}
 
 	gnuplot.errorbar({ .y = {0, 1, 1, 2, 3, 10, 2, 1}, .yErr = {1, 1, 1, 1, 2, 1, 2, 5}}/*, {.options = {.title = "a"}}*/);
@@ -139,7 +139,7 @@ EOF
 		auto ls2 = ls;
 		//ls2.index = 51;
 		ls2.lineColor = "blue";
-		gnuplot.setGridOptions({ true, true });
+		gnuplot.setGridOptions(Gnuplotpp::GridOptions{ true, true });
 
 		std::cout << std::hex << 42 << 42 << std::endl;
 		std::cout << std::setw(2) << std::setfill('0') << std::hex << 2 << std::endl;
