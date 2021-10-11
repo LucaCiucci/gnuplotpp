@@ -13,11 +13,10 @@ LC_NOTICE_END */
 #pragma once
 
 #include <string>
-//#include <ostream>
+#include <ostream>
 #include <fstream>
 #include <optional>
 #include <variant>
-#include <sstream>
 #include <map>
 #include <functional>
 #include <optional>
@@ -442,10 +441,7 @@ namespace lc
 
 		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
 
-		// TOOD ...
-		//void render(Plot2dRef plot) { this->render({ plot }); };
-
-		// TOOD ...
+		// TOOD description ...
 		void draw(std::list<Plot2dRef> plots);
 
 		// plot a buffer according to the options
