@@ -452,7 +452,7 @@ namespace lc
 		}
 	}
 
-	void Gnuplotpp::render(std::list<Plot2dRef> plots)
+	void Gnuplotpp::draw(std::list<Plot2dRef> plots)
 	{
 		// alias "gnuplot"
 		auto& gp = *this;

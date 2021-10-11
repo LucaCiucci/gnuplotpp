@@ -83,7 +83,7 @@ EOF
 	opt.marker.value().pointType = Gnuplotpp::PointType::Star;
 	opt.axes = Gnuplotpp::PlotAxes::x1y2;
 	auto plot2 = gnuplot.plot({ 1, 2, 3, 2, 2, 2, 10, 1, 1, 2, 2 }, opt);
-	gnuplot.render({ plot1, plot2 });
+	gnuplot.draw({ plot1, plot2 });
 
 	return 0;
 

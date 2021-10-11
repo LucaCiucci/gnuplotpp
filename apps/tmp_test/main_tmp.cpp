@@ -1,49 +1,24 @@
-
 #include <iostream>
-#include <random>
-#include <vector>
 
 #include <gnuplotpp/gnuplotpp.hpp>
-using namespace lc;
 
 int main(int argc, char** argv)
 {
-	// Create a gnuplot insance
-	Gnuplotpp gp(std::ofstream("a.p"));
+    using namespace lc;
 
-	// generate some random numbers
-	std::default_random_engine engine;
-	std::normal_distribution generator;
-	std::vector<double> data;
-	std::vector<double> data2;
-	for (size_t i = 0; i < 5; i++)
-	{
-		data.push_back(generator(engine));
-		data2.push_back(data.back() * data.back());
-	}
+    // In this way the output will be redirected to a file instead of gnuplot
+    Gnuplotpp gp(std::ofstream("a.p"));
 
-	// Marker type and size
-	Gnuplotpp::Marker marker;
-	marker.pointType = Gnuplotpp::PointType::Circle;
-	marker.pointSize = 2;
+    Gnuplotpp::LineStyle lineStyle;
+    lineStyle.lineColor = "red";
 
-	// Setting a line with red color
-	Gnuplotpp::LineStyle lineStyle;
-	lineStyle.lineColor = "red";
+    Gnuplotpp::Marker markerStyle;
+    markerStyle.pointType = Gnuplotpp::PointType::RhombusDot;
+    markerStyle.pointSize = 3;
 
-	// create a plot
-	auto myPlot = gp.plot(
-		// plot data
-		data, data2,
-		// plot options
-		{
-			.lineStyle = lineStyle,
-			.marker = marker
-		}
-	);
+    auto myPlot = gp.plot({ 1, 2, 3, 4, 0 }, { .lineStyle = lineStyle, .marker = markerStyle });
 
-	// render the plot
-	gp.render({ myPlot });
+    gp.draw({ myPlot });
 
-	return 0;
+    return 0;
 }

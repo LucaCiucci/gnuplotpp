@@ -385,12 +385,12 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		template <std::convertible_to<double> Ty>
-		void plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
 
 		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = {});
 
 		template <std::convertible_to<double> Ty>
-		void plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
 
 		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
 
@@ -398,7 +398,7 @@ namespace lc
 		//void render(Plot2dRef plot) { this->render({ plot }); };
 
 		// TOOD ...
-		void render(std::list<Plot2dRef> plots);
+		void draw(std::list<Plot2dRef> plots);
 
 		// plot a buffer according to the options
 		void plot(DataBuffer& buffer, const PlotOptions& options = {});
@@ -559,7 +559,7 @@ namespace lc
 
 	////////////////////////////////////////////////////////////////
 	template <std::convertible_to<double> Ty>
-	void Gnuplotpp::plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions)
+	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions)
 	{
 		// TODO reserve
 		std::vector<double> v;
@@ -570,12 +570,12 @@ namespace lc
 
 	////////////////////////////////////////////////////////////////
 	template <std::convertible_to<double> Ty>
-	void Gnuplotpp::plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions)
+	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions)
 	{
 		// TODO reserve
 		std::vector<double> vx, vy;
 		for (const auto& x : xData)
-			vx.push_back(y);
+			vx.push_back(x);
 		for (const auto& y : yData)
 			vy.push_back(y);
 		return this->plot(vx, vy, singlePlotOptions);
