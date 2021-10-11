@@ -389,11 +389,12 @@ namespace lc
 			friend class Gnuplotpp;
 		};
 
-		enum class Term
+		enum class Terminal
 		{
 			None,
 			Qt,
-			PNG
+			PNG,
+			JPEG
 		};
 
 		struct MultiplotGuard final : private _gnuplot_impl_::ScopeGuard
@@ -429,7 +430,12 @@ namespace lc
 
 		void resetSession(void);
 
-		void setTerm(Term term = Term::None, std::optional<std::string> outFile = {}, std::optional<Vector2i> size = {});
+		void setTerminal(Terminal term = Terminal::None, std::optional<std::string> outFile = {}, std::optional<Vector2i> size = {});
+
+		void setTitle(std::optional<std::string> title = {});
+
+		void xLabel(std::optional<std::string> label = {});
+		void yLabel(std::optional<std::string> label = {});
 
 		struct SinglePlotOptions
 		{
@@ -513,17 +519,17 @@ namespace lc
 		// TOOD description ...
 		void draw(std::list<Plot2dRef> plots);
 
-		void setTicksOptions(TicksOptions options);
+		void setTicksOptions(std::optional<TicksOptions> options = {});
 
-		void setGridOptions(GridOptions options);
+		void setGridOptions(std::optional<GridOptions> options = {});
 
 		Vector2d getMouseClick(void);
 
-		void setPlotOrigin(const Vector2d& pos);
-		void setPlotOrigin(void);
+		void setOrigin(const Vector2d& pos);
+		void setOrigin(void);
 
-		void setPlotSize(const Vector2d& pos);
-		void setPlotSize(void);
+		void setSize(const Vector2d& pos);
+		void setSize(void);
 
 		void beginMultiplot(size_t rows, size_t cols);
 		void endMultiplot(void);

@@ -328,8 +328,8 @@ namespace lc
 			throw std::runtime_error("could not init the gnuplot pipe");
 		}
 
-		this->setTicksOptions({});
-		this->setGridOptions({});
+		//this->setTicksOptions({});
+		//this->setGridOptions({});
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -371,7 +371,7 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setTerm(Term term, std::optional<std::string> outFile, std::optional<Vector2i> size)
+	void Gnuplotpp::setTerminal(Terminal term, std::optional<std::string> outFile, std::optional<Vector2i> size)
 	{
 		auto& gp = *this;
 
@@ -380,16 +380,24 @@ namespace lc
 
 		switch (term)
 		{
-		case Term::None:
+		case Terminal::None:
 			break;
-		case Term::Qt:
+		case Terminal::Qt:
 			gp << "set term qt";
 			if (size)
 				gp << " size " << size.value().x << ", " << size.value().y;
 			gp << std::endl;
 			break;
-		case Term::PNG:
-			gp << "set term png" << std::endl;
+		case Terminal::PNG:
+			gp << "set term png";
+			if (size)
+				gp << " size " << size.value().x << ", " << size.value().y;
+			gp << std::endl;
+			if (!outFile)
+				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
+			break;
+		case Terminal::JPEG:
+			gp << "set term jpeg";
 			if (size)
 				gp << " size " << size.value().x << ", " << size.value().y;
 			gp << std::endl;
@@ -404,6 +412,33 @@ namespace lc
 			gp << "set output \"" << outFile.value() << "\"" << std::endl;
 
 		// http://www.math.utk.edu/~vasili/refs/How-to/gnuplot.print.html
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::setTitle(std::optional<std::string> title)
+	{
+		if (title)
+			*this << "set title \"" << title.value() << "\"" << std::endl;
+		else
+			*this << "unset title" << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::xLabel(std::optional<std::string> label)
+	{
+		if (label)
+			*this << "set xlabel \"" << label.value() << "\"" << std::endl;
+		else
+			*this << "unset xlabel" << std::endl;
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::yLabel(std::optional<std::string> label)
+	{
+		if (label)
+			*this << "set ylabel \"" << label.value() << "\"" << std::endl;
+		else
+			*this << "unset ylabel" << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -652,32 +687,43 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setTicksOptions(TicksOptions options)
+	void Gnuplotpp::setTicksOptions(std::optional<TicksOptions> options)
 	{
 		auto& gp = *this;
 
-		gp << "set mxtics " << options.minorXdivider << std::endl;
-		gp << "set mytics " << options.minorYdivider << std::endl;
+		if (options)
+		{
+			gp << "set mxtics " << options.value().minorXdivider << std::endl;
+			gp << "set mytics " << options.value().minorYdivider << std::endl;
+		}
+		else
+		{
+			gp << "unset mxtics" << std::endl;
+			gp << "unset mytics" << std::endl;
+		}
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setGridOptions(GridOptions options)
+	void Gnuplotpp::setGridOptions(std::optional<GridOptions> options)
 	{
 		auto& gp = *this;
 		
 		// unset the previous grid options
 		gp << "unset grid" << std::endl;
 
+		if (!options)
+			return;
+
 		// grid ticks
 		//gp << "show style line" << std::endl;
 		//gp << "show grid" << std::endl;
-		if (options.major.x) gp << "set grid xtics" << std::endl;
-		if (options.major.y) gp << "set grid ytics" << std::endl;
-		if (options.minor.x) gp << "set grid mxtics" << std::endl;
-		if (options.minor.y) gp << "set grid mytics" << std::endl;
+		if (options.value().major.x) gp << "set grid xtics" << std::endl;
+		if (options.value().major.y) gp << "set grid ytics" << std::endl;
+		if (options.value().minor.x) gp << "set grid mxtics" << std::endl;
+		if (options.value().minor.y) gp << "set grid mytics" << std::endl;
 
 		// grid level
-		switch (options.gridLevel)
+		switch (options.value().gridLevel)
 		{
 		case GridOptions::GridLevel::LayerDefault:
 			gp << "set grid layerdefault" << std::endl;
@@ -692,8 +738,8 @@ namespace lc
 			break;
 		}
 
-		LineStyleSerializer majorLineStyleSerialiser(this->createNewID(), options.majorLineStyle);
-		LineStyleSerializer minorLineStyleSerializer(this->createNewID(), options.minorLineStyle);
+		LineStyleSerializer majorLineStyleSerialiser(this->createNewID(), options.value().majorLineStyle);
+		LineStyleSerializer minorLineStyleSerializer(this->createNewID(), options.value().minorLineStyle);
 		majorLineStyleSerialiser.prepare(*this); minorLineStyleSerializer.prepare(*this);
 		majorLineStyleSerialiser.print(*this); minorLineStyleSerializer.print(*this);
 		gp << "set grid ls " << majorLineStyleSerialiser.m_id->id << ", ls " << minorLineStyleSerializer.m_id->id << std::endl;
@@ -758,25 +804,25 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setPlotOrigin(const Vector2d& pos)
+	void Gnuplotpp::setOrigin(const Vector2d& pos)
 	{
 		*this << "set origin " << pos.x << ", " << pos.y << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setPlotOrigin(void)
+	void Gnuplotpp::setOrigin(void)
 	{
 		*this << "unset origin" << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setPlotSize(const Vector2d& pos)
+	void Gnuplotpp::setSize(const Vector2d& pos)
 	{
 		*this << "set size " << pos.x << ", " << pos.y << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::setPlotSize(void)
+	void Gnuplotpp::setSize(void)
 	{
 		*this << "unset size" << std::endl;
 	}
