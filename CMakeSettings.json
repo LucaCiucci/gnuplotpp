@@ -9,7 +9,14 @@
       "installRoot": "D:\\LUCA\\codici\\vs\\librerie\\__install__",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "GNUPLOTPP_USE_LC_LIBRARY",
+          "value": "False",
+          "type": "BOOL"
+        }
+      ]
     }
   ]
 }
