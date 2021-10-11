@@ -23,3 +23,4 @@ LC_NOTICE_END -->
 - [ ] lc support
 - [ ] `IDontKonwCpp.md`
 - [ ] online interactive c++ examples, see [respawned, gnuplot online](http://gnuplot.respawned.com/)
+- [ ] leggi https://stackoverflow.com/questions/61922390/gnuplot-qt-hyperlinks-and-click-events

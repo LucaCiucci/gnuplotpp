@@ -121,6 +121,11 @@ namespace lc
 	{
 	public:
 
+		struct Vector2d
+		{
+			double x = 0, y = 0;
+		};
+
 		class DataBuffer;
 
 		// "e"
@@ -416,6 +421,8 @@ namespace lc
 
 		void setGridOptions(GridOptions options);
 
+		Vector2d getMouseClick(void);
+
 #ifdef _GNUPLOTPP_USE_LC_LIBRARY
 
 		// ...
@@ -532,6 +539,7 @@ namespace lc
 
 std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::DataBuffer& buffer);
 std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Color& color);
+std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v);
 
 // ================================================================================================================================
 // ================================================================================================================================

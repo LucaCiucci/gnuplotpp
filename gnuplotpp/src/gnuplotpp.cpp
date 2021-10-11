@@ -50,7 +50,7 @@ namespace lc
 				return false;
 			}
 			std::clog << "succeded." << std::endl;
-			(std::ofstream&)(*this) = std::move(std::ofstream(m_pipe));
+			(std::fstream&)(*this) = std::move(std::fstream(m_pipe));
 
 			return (bool)m_pipe;
 		}
@@ -713,6 +713,37 @@ namespace lc
 		gp << "set style line " << style.str() << std::endl;
 	}*/
 
+	Gnuplotpp::Vector2d Gnuplotpp::getMouseClick(void)
+	{
+		auto& gp = *this;
+
+		Vector2d v;
+
+		gp << "set mouse" << std::endl;
+		gp << "set mouse" << std::endl;
+
+		//gp << "pause mouse \"Mouse Click!\"" << std::endl;
+		gp << "pause mouse" << std::endl;
+		std::string s;
+
+		while (1)
+		{
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(0.2s);
+
+			gp >> s;
+			std::cout << "s = " << s << std::endl;
+		}
+
+		//*this << "if (exists(\"MOUSE_X\")) print MOUSE_X, MOUSE_Y, MOUSE_BUTTON; else print 0, 0, -1;" << std::endl;
+		gp << "if (exists(\"MOUSE_X\")) print MOUSE_X; else print 0;" << std::endl;
+		//gp >> v.x;
+		gp << "if (exists(\"MOUSE_Y\")) print MOUSE_Y; else print 0;" << std::endl;
+		//gp >> v.y;
+
+		return v;
+	}
+
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
 	// ================================================================
@@ -792,6 +823,11 @@ std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Color& colo
 		<< std::setw(2) << std::setfill('0') << (int)color.g
 		<< std::setw(2) << std::setfill('0') << (int)color.b
 		<< std::dec;
+	return ostream;
+}
+std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v)
+{
+	ostream << "(" << v.x << ", " << v.y << std::endl;
 	return ostream;
 }
 
