@@ -12,12 +12,15 @@ LC_NOTICE_END -->
 
 # The `docs/` folder
 
-## Guides/documentation
+## Guides
 
 Some important files:
-- [QuickStart](QuickStart.md)
-- [usage](usage.md)
-- [VS_guide](VS_guide.md)
-- [BuildAndInstall](BuildAndInstall.md)
-- [IDontKnowCpp](IDontKnowCpp.md)
-- [Gnuplotpp_class](Gnuplotpp_class.md)
+- [BuildAndInstall](BuildAndInstall.md) some instructions on how to build, install and link the *Gnuplot++* library
+- [VS_guide](VS_guide.md) instructions on how to use Visual Studio with cmake projects if you don't know hot to
+- [IDontKnowCpp](IDontKnowCpp.md) a quick introduction to the *C++* you will need to use *Gnuplot++*
+- [QuickStart](QuickStart.md) some tips to start plotting *Now*
+- [usage](usage.md) a bit more detailed usage description with *examples*
+
+## documentation
+
+- [Gnuplotpp_class](Gnuplotpp_class.md) (???)
