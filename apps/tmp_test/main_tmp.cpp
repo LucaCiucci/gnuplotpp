@@ -15,8 +15,12 @@ int main(int argc, char** argv)
 	std::default_random_engine engine;
 	std::normal_distribution generator;
 	std::vector<double> data;
+	std::vector<double> data2;
 	for (size_t i = 0; i < 5; i++)
+	{
 		data.push_back(generator(engine));
+		data2.push_back(data.back() * data.back());
+	}
 
 	// Marker type and size
 	Gnuplotpp::Marker marker;
@@ -30,7 +34,7 @@ int main(int argc, char** argv)
 	// create a plot
 	auto myPlot = gp.plot(
 		// plot data
-		data,
+		data, data2,
 		// plot options
 		{
 			.lineStyle = lineStyle,

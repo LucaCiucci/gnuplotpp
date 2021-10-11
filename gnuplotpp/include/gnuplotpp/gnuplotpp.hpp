@@ -373,15 +373,8 @@ namespace lc
 		//  - gnuplot.plot(your_data, { .spacing=0.1, .options={ .title="Hello There!" } })
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
+		// TODO STATIC
 		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
-
-		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
-
-		// TOOD ...
-		//void render(Plot2dRef plot) { this->render({ plot }); };
-
-		// TOOD ...
-		void render(std::list<Plot2dRef> plots);
 
 		// Plot a vector of real values
 		// Note that options.cols is ignored
@@ -390,8 +383,22 @@ namespace lc
 		//  - gnuplot.plot(your_data, { .spacing=0.1 })
 		//  - gnuplot.plot(your_data, { .spacing=0.1, .options={ .title="Hello There!" } })
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
+		// TODO update examples
 		template <std::convertible_to<double> Ty>
 		void plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
+
+		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = {});
+
+		template <std::convertible_to<double> Ty>
+		void plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
+
+		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
+
+		// TOOD ...
+		//void render(Plot2dRef plot) { this->render({ plot }); };
+
+		// TOOD ...
+		void render(std::list<Plot2dRef> plots);
 
 		// plot a buffer according to the options
 		void plot(DataBuffer& buffer, const PlotOptions& options = {});
@@ -554,10 +561,24 @@ namespace lc
 	template <std::convertible_to<double> Ty>
 	void Gnuplotpp::plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions)
 	{
+		// TODO reserve
 		std::vector<double> v;
 		for (const auto& y : data)
 			v.push_back(y);
-		this->plot(v, singlePlotOptions);
+		return this->plot(v, singlePlotOptions);
+	}
+
+	////////////////////////////////////////////////////////////////
+	template <std::convertible_to<double> Ty>
+	void Gnuplotpp::plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions)
+	{
+		// TODO reserve
+		std::vector<double> vx, vy;
+		for (const auto& x : xData)
+			vx.push_back(y);
+		for (const auto& y : yData)
+			vy.push_back(y);
+		return this->plot(vx, vy, singlePlotOptions);
 	}
 
 	// ================================================================

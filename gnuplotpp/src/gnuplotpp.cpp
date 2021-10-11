@@ -385,6 +385,7 @@ namespace lc
 		{
 			buffer = DataBuffer(2);
 
+			// TODO RESERVE
 			size_t counter = 0;
 			for (const auto& y : data)
 				buffer << ((counter++) * singlePlotOptions.spacing.value()) << y << endRow;
@@ -392,10 +393,37 @@ namespace lc
 		}
 		else
 		{
+			// TODO RESERVE
 			for (const auto& y : data)
 				buffer << y << endRow;
 			options.cols = { 0 };
 		}
+
+		return plot;
+	}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions)
+	{
+		Plot2d plot;
+
+		// buffer with 2 columns
+		plot.pBuffer = std::make_unique<DataBuffer>(2);
+		auto& buffer = *plot.pBuffer.get();
+
+		plot.pOptions = std::make_unique<PlotOptions>((PlotOptions)singlePlotOptions);
+		auto& options = *plot.pOptions.get();
+
+		if (xData.size() != yData.size())
+			throw std::runtime_error(
+				(std::string)"in Gnuplotpp::plot, xData.size() must be equal to yData.size() but they were "
+				+ std::to_string(xData.size()) + ", " + std::to_string(yData.size())
+			);
+
+		// TODO RESERVE
+		for (size_t i = 0; i < xData.size(); i++)
+			buffer << xData[i] << yData[i] << endRow;
+		options.cols = { 0, 1 };
 
 		return plot;
 	}
