@@ -93,7 +93,7 @@ namespace lc
 
 			if (N > 0)
 				// print the data
-				std::fprintf(m_pipe, s.c_str());
+				std::fprintf(m_pipe, "%s", s.c_str());
 
 			std::fflush(m_pipe);
 
