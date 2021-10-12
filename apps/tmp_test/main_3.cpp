@@ -27,6 +27,8 @@ int main(int argc, char** argv)
 #include <vector>
 #include <sstream>
 
+#include <cstring>
+
 // https://blog.csdn.net/tangyin025/article/details/50487544
 class MyStream : public std::streambuf
 {
