@@ -22,7 +22,12 @@ LC_NOTICE_END */
 #include <optional>
 #include <list>
 #include <memory>
+#include <filesystem>
+
+#if __has_include(<concepts>)
+#define _GNUPLOTPP_USE_CONCEPTS
 #include <concepts>
+#endif
 
 #if defined(_WIN32) || defined (_MSVC_VER)
 #include <Windows.h>
@@ -67,21 +72,23 @@ namespace lc
 		};
 
 		// ================================================================
-		//                         GNUPLOT PIPE
+		//                       PIPE Streambuf
 		// ================================================================
 
-		// This class represents a pipe to gnuplot. It is a write only pipe
-		// (ofstream). In the future it will be bidirectional.
-		class GnuplotPipe : NonCopyable, public std::ofstream
+		// https://en.cppreference.com/w/cpp/io/basic_streambuf
+		// http://www.cplusplus.com/reference/ostream/ostream/
+		// https://codereview.stackexchange.com/questions/185490/custom-ostream-for-a-println-like-function
+		// https://siware.dev/007-cpp-custom-streambuf/
+		// https://siware.dev/007-cpp-custom-streambuf/
+		// https://blog.csdn.net/tangyin025/article/details/50487544
+		// TODO add to LC library
+		class PipeStreamBuf : public std::streambuf, NonCopyable
 		{
-		protected:
-			class CommandLineID;
-			class CommandLineIDImpl;
-		protected:
+		public:
 
+			PipeStreamBuf(const std::string& command, size_t buffSize = 1 << 10);
 
-			// Init the pipe
-			bool init(bool persist);
+			~PipeStreamBuf() override;
 
 			// check if the pipe is open
 			bool isOpen(void) const { return m_pipe; };
@@ -89,56 +96,75 @@ namespace lc
 			// check if the pipe is open
 			operator bool() const { return this->isOpen(); };
 
-		public:
+		protected:
 
-			~GnuplotPipe();
+			// this is the function that synchronizes the pipe (i.e. flushes)
+			int sync(void) override;
 
-			CommandLineID createNewID(void);
+			// this is the function that takes a sequence of chars and puts it in the
+			// buffer optionally calling overflow()
+			//std::streamsize xsputn(const char* ptr, std::streamsize count) override;
 
-			void cleanIDs(void);
+			// this is the function the flushes the buffer into the pie
+			int_type overflow(int_type ch = std::char_traits<char>::eof()) override;
+
 
 		private:
+			std::vector<char> m_buff;
+			FILE* m_pipe;
+		};
+
+		// ================================================================
+		//                         GNUPLOT PIPE
+		// ================================================================
+
+		// This class represents a pipe to gnuplot. It is a write only pipe
+		// (ofstream). In the future it will be bidirectional.
+		class GnuplotPipe : NonCopyable, public std::ostream
+		{
+		public:
+
+			GnuplotPipe(bool persist);
+
+		protected:
+
+			// check if the pipe is open
+			bool isOpen(void) const { return m_pipeStreamBuf.isOpen(); };
+
+			// check if the pipe is open
+			operator bool() const { return this->isOpen(); };
+
+		private:
+			PipeStreamBuf m_pipeStreamBuf;
+		};
+
+		
+		// TODO on LC library
+		class MultiStream : NonCopyable
+		{
+		public:
+
+			// TODO concept
+			template <class T>
+			MultiStream& operator<<(const T& obj)
+			{
+				for (auto& ostream : m_ostreams)
+					ostream << obj;
+				return *this;
+			}
+
+			//ostream& endl(ostream& os);
+			MultiStream& operator<<(std::ostream& (*endl)(std::ostream& os))
+			{
+				for (auto& ostream : m_ostreams)
+					ostream << endl;
+				return *this;
+			}
+
+			void addRdbuf(std::streambuf* streambuf);
 			
-			// TODO implement and use
-			std::shared_ptr<CommandLineIDImpl> createNewIDImpl(void);
-
 		private:
-			FILE* m_pipe = {};
-			std::map<size_t, std::weak_ptr<CommandLineIDImpl>> m_idMap;
-		};
-
-		// TODO lc::PrimiteveWrapper https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
-
-		struct GnuplotPipe::CommandLineIDImpl final
-		{
-			size_t id = 0;
-
-			std::function<void(void)> onExit = {};
-
-			CommandLineIDImpl() = default;
-			CommandLineIDImpl(const CommandLineIDImpl&) = default;
-			CommandLineIDImpl(CommandLineIDImpl&&) = default;
-
-			CommandLineIDImpl& operator=(const CommandLineIDImpl&) = default;
-			CommandLineIDImpl& operator=(CommandLineIDImpl&&) = default;
-		};
-
-		class GnuplotPipe::CommandLineID final : public std::shared_ptr<GnuplotPipe::CommandLineIDImpl>
-		{
-		public:
-			using shared_ptr::shared_ptr;
-
-			CommandLineID(const CommandLineID&) = default;
-			CommandLineID(CommandLineID&&) = default;
-
-			CommandLineID& operator=(const CommandLineID&) = default;
-			CommandLineID& operator=(CommandLineID&&) = default;
-
-		private:
-			CommandLineID() = delete;
-			CommandLineID(std::shared_ptr<GnuplotPipe::CommandLineIDImpl> id) : shared_ptr(id) {};
-
-			friend class GnuplotPipe;
+			std::list<std::ostream> m_ostreams;
 		};
 	}
 
@@ -148,7 +174,7 @@ namespace lc
 
 	// This is the main Gnuplot++ class.s
 	// TODO on a custom stream instead of pipe
-	class Gnuplotpp : public _gnuplot_impl_::GnuplotPipe
+	class Gnuplotpp : public _gnuplot_impl_::MultiStream
 	{
 	public:
 
@@ -208,6 +234,42 @@ namespace lc
 		};
 #endif
 
+		// ============== ID ==============
+
+		// TODO lc::PrimiteveWrapper https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
+
+		struct CommandLineIDImpl final
+		{
+			size_t id = 0;
+
+			std::function<void(void)> onExit = {};
+
+			CommandLineIDImpl() = default;
+			CommandLineIDImpl(const CommandLineIDImpl&) = default;
+			CommandLineIDImpl(CommandLineIDImpl&&) = default;
+
+			CommandLineIDImpl& operator=(const CommandLineIDImpl&) = default;
+			CommandLineIDImpl& operator=(CommandLineIDImpl&&) = default;
+		};
+
+		class CommandLineID final : public std::shared_ptr<CommandLineIDImpl>
+		{
+		public:
+			using shared_ptr::shared_ptr;
+
+			CommandLineID(const CommandLineID&) = default;
+			CommandLineID(CommandLineID&&) = default;
+
+			CommandLineID& operator=(const CommandLineID&) = default;
+			CommandLineID& operator=(CommandLineID&&) = default;
+
+		private:
+			CommandLineID() = delete;
+			CommandLineID(std::shared_ptr<CommandLineIDImpl> id) : shared_ptr(id) {};
+
+			friend class Gnuplotpp;
+		};
+
 		// =========== buffers ============
 
 		class DataBuffer;
@@ -259,8 +321,8 @@ namespace lc
 
 		struct GnuplotSerializable
 		{
-			virtual void prepare(GnuplotPipe& os) const = 0;
-			virtual void print(GnuplotPipe& os) const = 0;
+			virtual void prepare(Gnuplotpp& os) const = 0;
+			virtual void print(Gnuplotpp& os) const = 0;
 		};
 
 		struct GnuplotSerializer : public GnuplotSerializable, _gnuplot_impl_::NonCopyable
@@ -280,8 +342,8 @@ namespace lc
 
 			MarkerSerializer(const Marker& m) : m_m(m) {};
 
-			void prepare(GnuplotPipe& os) const override;
-			void print(GnuplotPipe& os) const override;
+			void prepare(Gnuplotpp& os) const override;
+			void print(Gnuplotpp& os) const override;
 		};
 
 		struct LineStyle
@@ -302,8 +364,8 @@ namespace lc
 
 			LineStyleSerializer(CommandLineID id, const LineStyle& ls) : m_id(id), m_ls(ls) {};
 
-			void prepare(GnuplotPipe& os) const override;
-			void print(GnuplotPipe& os) const override;
+			void prepare(Gnuplotpp& os) const override;
+			void print(Gnuplotpp& os) const override;
 		};
 
 		enum class PlotAxes
@@ -338,8 +400,8 @@ namespace lc
 
 			PlotOptionsSerializer(const PlotOptions& opt) : m_opt(opt) {};
 
-			void prepare(GnuplotPipe& os) const override;
-			void print(GnuplotPipe& os) const override;
+			void prepare(Gnuplotpp& os) const override;
+			void print(Gnuplotpp& os) const override;
 		};
 
 		struct TicksOptions
@@ -412,9 +474,18 @@ namespace lc
 		// ================================
 
 		// Default constructor
-		Gnuplotpp(bool persist = true);
+		Gnuplotpp(bool persist = true, size_t buffSize = 1 << 10);
 
-		Gnuplotpp(std::ofstream&& file);
+		// use a file
+		Gnuplotpp(std::ofstream&& oFileStream);
+
+		// use a different ostream
+		// not necessary, unique is convertible to shared...
+		// TODO modify to avoid ambiguity
+		//Gnuplotpp(std::unique_ptr<std::ostream>&& ostream);
+
+		// use a different ostream
+		Gnuplotpp(std::shared_ptr<std::ostream> ostream);
 
 		// default move costructor
 		Gnuplotpp(Gnuplotpp&&) = default;
@@ -451,7 +522,7 @@ namespace lc
 
 			// Style of the line connecting the points, if not set
 			// no line will be drawn
-			std::optional<LineStyle> lineStyle;
+			std::optional<LineStyle> lineStyle = {};
 
 			// The marker type and size
 			std::optional<Marker> marker = Marker{};
@@ -478,8 +549,9 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		// TODO STATIC
-		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Plot a vector of real values
 		// Note that options.cols is ignored
 		// examples:
@@ -489,12 +561,15 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
+#endif
 
-		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
+#endif
 
 		struct ErrorbarData
 		{
@@ -515,12 +590,12 @@ namespace lc
 		// Creates an errorbar plot.
 		// Data can be passes through an ErrorbarData struct, at leas one of X or Y errrors
 		// must be present
-		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 
 		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
 
 		// TOOD description ...
-		void draw(std::list<Plot2dRef> plots);
+		void draw(const std::list<Plot2dRef>& plots);
 
 		void setTicksOptions(std::optional<TicksOptions> options = {});
 
@@ -547,11 +622,35 @@ namespace lc
 
 		//void lineStyle(LineStyle style);
 
+		CommandLineID createNewID(void);
+
+		void cleanIDs(void);
+
+		// impossible, see https://stackoverflow.com/questions/20774587/why-cant-stdostream-be-moved
+		//void addOstream(std::ostream&& ostream);
+
+		void addOstream(std::unique_ptr<std::ostream>&& pOstream);
+
+		void addOstream(const std::shared_ptr<std::ostream>& pOstream);
+
+		// already in MultiStream
+		//void addRdbuf(std::streambuf* streambuf);
+
+		void writeCommandsOnFile(const std::filesystem::path& path);
+
+		void writeCommandsOnFile(std::ofstream&& file);
+
 	private:
 
-		std::ostream& getCurrentStream(void);
+		// TODO implement and use
+		std::shared_ptr<CommandLineIDImpl> createNewIDImpl(void);
 
 	private:
+		std::list<std::variant<
+			std::unique_ptr<std::ostream>,
+			std::shared_ptr<std::ostream>>
+			> m_ostreams;
+		std::map<size_t, std::weak_ptr<CommandLineIDImpl>> m_idMap;
 	};
 
 	// ================================================================
@@ -618,6 +717,7 @@ namespace lc
 		//  - [list<double>] row : the row to insert
 		void push_row(std::list<double> row);
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Insert a row in the form of a container of values convertible to double.
 		// The row size shall be equal to the column count
 		// params:
@@ -625,7 +725,9 @@ namespace lc
 		template <std::ranges::range Container>
 		requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
 		void push_row(Container row);
+#endif
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Insert a row in the form of a container of values convertible to double.
 		// The row size shall be equal to the column count
 		// params:
@@ -633,6 +735,7 @@ namespace lc
 		template <std::ranges::range Container>
 		requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
 		DataBuffer& operator<<(Container row);
+#endif
 
 		// Insest data gradually, value by value, for example:
 		// buff << x << y << lc::endRow;
@@ -681,6 +784,7 @@ namespace lc
 	//          COMUNICATION
 	// ================================
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::convertible_to<double> Ty>
 	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions)
@@ -691,7 +795,9 @@ namespace lc
 			v.push_back(y);
 		return this->plot(v, singlePlotOptions);
 	}
+#endif
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::convertible_to<double> Ty>
 	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions)
@@ -704,6 +810,7 @@ namespace lc
 			vy.push_back(y);
 		return this->plot(vx, vy, singlePlotOptions);
 	}
+#endif
 
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
@@ -717,6 +824,7 @@ namespace lc
 	//             DATA
 	// ================================
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::ranges::range Container>
 	requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
@@ -730,7 +838,9 @@ namespace lc
 		// call the double push_row() function
 		this->push_row(v);
 	}
+#endif
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::ranges::range Container>
 	requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
@@ -739,4 +849,5 @@ namespace lc
 		this->push_row(row);
 		return *this;
 	}
+#endif
 }

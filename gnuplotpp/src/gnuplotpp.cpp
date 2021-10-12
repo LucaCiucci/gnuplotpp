@@ -36,49 +36,93 @@ namespace lc
 {
 	namespace _gnuplot_impl_
 	{
-		////////////////////////////////////////////////////////////////
-		bool GnuplotPipe::init(bool persist)
-		{
-			std::clog << "Opening gnuplot... ";
+		// ================================================================
+		//                       PIPE Streambuf
+		// ================================================================
 
-			// open the pipe
-			m_pipe = _LC_GNUPLOT_POPEN(persist ? "gnuplot --persist" : "gnuplot", "w");
+		////////////////////////////////////////////////////////////////
+		PipeStreamBuf::PipeStreamBuf(const std::string& command, size_t buffSize)
+		{
+			// TODO: is a buffer necessary? maybe directly print on the pipe
+			m_buff.resize(buffSize);
+
+			m_pipe = _LC_GNUPLOT_POPEN(command.c_str(), "w");
+			//m_pipe = std::fopen("a.txt", "w");
 
 			if (!m_pipe)
-			{
-				std::clog << "failed!" << std::endl;
-				return false;
-			}
-			std::clog << "succeded." << std::endl;
-			(std::ofstream&)(*this) = std::move(std::ofstream(m_pipe));
-
-			return (bool)m_pipe;
+				throw std::runtime_error("could not open the pipe");
 		}
 
 		////////////////////////////////////////////////////////////////
-		GnuplotPipe::~GnuplotPipe()
+		PipeStreamBuf::~PipeStreamBuf()
 		{
-			//if (m_pipe)
-			//	_LC_GNUPLOT_PCLOSE(m_pipe);
+			// for flush ??? I don't know if it is necessary
+			this->sync();
+
+			if (m_pipe)
+				_LC_GNUPLOT_PCLOSE(m_pipe);
 		}
 
-		GnuplotPipe::CommandLineID GnuplotPipe::createNewID(void)
+		////////////////////////////////////////////////////////////////
+		int PipeStreamBuf::sync(void)
 		{
-			auto ID = std::make_shared<CommandLineIDImpl>();
+			// we call overflow that will flush the content of the buffer
+			if (this->overflow() == std::char_traits<char>::eof())
+				// error
+				return -1;
 
-			ID->id = 50;
-			while (m_idMap.find(ID->id) != m_idMap.end())
-				ID->id++;
-
-			m_idMap[ID->id] = ID;
-			this->cleanIDs();
-
-			return CommandLineID(ID);
+			// success
+			return 0;
 		}
 
-		void GnuplotPipe::cleanIDs(void)
+		////////////////////////////////////////////////////////////////
+		PipeStreamBuf::int_type PipeStreamBuf::overflow(int_type ch)
 		{
-			std::erase_if(m_idMap, [](const auto& pair) -> bool { return !pair.second.lock(); });
+			std::string s;
+
+			// number of char in the buffer
+			auto N = this->pptr() - this->pbase();
+
+			s = std::string(this->pbase(), this->pptr());
+
+			if (ch != std::char_traits<char>::eof())
+			{
+				s += ch;
+				N++;
+			}
+
+			if (N > 0)
+				// print the data
+				std::fprintf(m_pipe, s.c_str());
+
+			std::fflush(m_pipe);
+
+			// reset pointers
+			this->setp(m_buff.data(), m_buff.data() + m_buff.capacity());
+
+			// success
+			// giusto ?!?!? not_eof?
+			//return std::char_traits<char>::eof() + 1;
+			return std::char_traits<char>::not_eof(ch);
+		}
+
+		// ================================================================
+		//                         GNUPLOT PIPE
+		// ================================================================
+
+		////////////////////////////////////////////////////////////////
+		GnuplotPipe::GnuplotPipe(bool persist) :
+			std::ostream{ &m_pipeStreamBuf },
+			m_pipeStreamBuf{ persist ? "gnuplot --persist" : "gnuplot" }
+		{
+			// necessary ???
+			this->rdbuf(&m_pipeStreamBuf);
+		}
+
+		////////////////////////////////////////////////////////////////
+		void MultiStream::addRdbuf(std::streambuf* streambuf)
+		{
+			m_ostreams.emplace_back(streambuf);
 		}
 	}
 
@@ -91,13 +135,13 @@ namespace lc
 	const char* Gnuplotpp::Datablock_EOD = "EOD";
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::MarkerSerializer::prepare(GnuplotPipe& os) const
+	void Gnuplotpp::MarkerSerializer::prepare(Gnuplotpp& os) const
 	{
 		// nothing to do
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::MarkerSerializer::print(GnuplotPipe& os) const
+	void Gnuplotpp::MarkerSerializer::print(Gnuplotpp& os) const
 	{
 		// pt = pointtype
 		// ps = pointsize
@@ -119,7 +163,7 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::LineStyleSerializer::prepare(GnuplotPipe& os) const
+	void Gnuplotpp::LineStyleSerializer::prepare(Gnuplotpp& os) const
 	{
 		auto id = m_id->id;
 		m_id->onExit = [&os, id]() { os << "unset style line " << id; };
@@ -132,7 +176,7 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::LineStyleSerializer::print(GnuplotPipe& os) const
+	void Gnuplotpp::LineStyleSerializer::print(Gnuplotpp& os) const
 	{
 		// "lt" = "linetype"
 		// "lc" = "linecolor"
@@ -179,7 +223,7 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::PlotOptionsSerializer::prepare(GnuplotPipe& os) const
+	void Gnuplotpp::PlotOptionsSerializer::prepare(Gnuplotpp& os) const
 	{
 		if (m_opt.lineStyle)
 		{
@@ -202,7 +246,7 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::PlotOptionsSerializer::print(GnuplotPipe& os) const
+	void Gnuplotpp::PlotOptionsSerializer::print(Gnuplotpp& os) const
 	{
 		// cols
 		{
@@ -317,25 +361,27 @@ namespace lc
 	// ================================
 
 	////////////////////////////////////////////////////////////////
-	Gnuplotpp::Gnuplotpp(bool persist)
+	Gnuplotpp::Gnuplotpp(bool persist, size_t buffSize)
 	{
-		// try to init the gnuplot pipe, in case of failure we will throw an error
-		if (!GnuplotPipe::init(persist))
-		{
-#ifndef NDEBUG
-			std::cerr << "could not init the gnuplot pipe, maybe gnuplot was not installed?" << std::endl;
-#endif // !NDEBUG
-			throw std::runtime_error("could not init the gnuplot pipe");
-		}
-
-		//this->setTicksOptions({});
-		//this->setGridOptions({});
+		this->addOstream(std::make_unique<_gnuplot_impl_::GnuplotPipe>(persist));
 	}
 
 	////////////////////////////////////////////////////////////////
-	Gnuplotpp::Gnuplotpp(std::ofstream&& file)
+	Gnuplotpp::Gnuplotpp(std::ofstream&& oFileStream)
 	{
-		(std::ofstream&)*this = std::move(file);
+		this->addOstream(std::make_unique<std::ofstream>(std::move(oFileStream)));
+	}
+
+	////////////////////////////////////////////////////////////////
+	//Gnuplotpp::Gnuplotpp(std::unique_ptr<std::ostream>&& pOstream)
+	//{
+	//	this->addOstream(std::move(pOstream));
+	//}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::Gnuplotpp(std::shared_ptr<std::ostream> ostream)
+	{
+		this->addOstream(ostream);
 	}
 
 	// ================================
@@ -354,9 +400,10 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::sendLine(const std::string& line)
 	{
-		assert(("GnuplotPipe::sendLine requires an open pipe", this->isOpen()));
-		if (!this->isOpen())
-			throw std::runtime_error("GnuplotPipe::sendLine() requires an open pipe");
+		// TODO move inside GnuplotPipe
+		//assert(("GnuplotPipe::sendLine requires an open pipe", this->isOpen()));
+		//if (!this->isOpen())
+		//	throw std::runtime_error("GnuplotPipe::sendLine() requires an open pipe");
 
 		*this << line << std::endl;
 	}
@@ -628,7 +675,7 @@ namespace lc
 		}
 	}
 
-	void Gnuplotpp::draw(std::list<Plot2dRef> plots)
+	void Gnuplotpp::draw(const std::list<Plot2dRef>& plots)
 	{
 		// TODO chack not empty
 
@@ -846,6 +893,65 @@ namespace lc
 		return MultiplotGuard(this);
 	}
 
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::CommandLineID Gnuplotpp::createNewID(void)
+	{
+		auto ID = std::make_shared<CommandLineIDImpl>();
+
+		ID->id = 50;
+		while (m_idMap.find(ID->id) != m_idMap.end())
+			ID->id++;
+
+		m_idMap[ID->id] = ID;
+		this->cleanIDs();
+
+		return CommandLineID(ID);
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::cleanIDs(void)
+	{
+		std::erase_if(m_idMap, [](const auto& pair) -> bool { return !pair.second.lock(); });
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::addOstream(std::unique_ptr<std::ostream>&& pOstream)
+	{
+		// TODO checks on pOstream
+
+		this->addRdbuf(pOstream->rdbuf());
+		m_ostreams.emplace_back(std::move(pOstream));
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::addOstream(const std::shared_ptr<std::ostream>& pOstream)
+	{
+		// TODO checks on pOstream
+
+		this->addRdbuf(pOstream->rdbuf());
+		m_ostreams.emplace_back(std::move(pOstream));
+	}
+
+	////////////////////////////////////////////////////////////////
+	/*void Gnuplotpp::addRdbuf(std::streambuf* streambuf)
+	{
+		//this->addOstream(std::make_unique<std::ostream>(streambuf));
+
+		MultiStream::addRdbuf(streambuf);
+	}*/
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::writeCommandsOnFile(const std::filesystem::path& path)
+	{
+		this->writeCommandsOnFile(std::ofstream(path));
+	}
+
+	////////////////////////////////////////////////////////////////
+	void Gnuplotpp::writeCommandsOnFile(std::ofstream&& file)
+	{
+		this->addOstream(std::make_unique<std::ofstream>(std::move(file)));
+	}
+
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
 	// ================================================================
@@ -853,7 +959,11 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	Gnuplotpp::DataBuffer& endRow(Gnuplotpp::DataBuffer& buff)
 	{
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		buff.push_row(buff.m_tmpData);
+#else
+		buff.push_row(std::list<double>(buff.m_tmpData.begin(), buff.m_tmpData.end()));
+#endif
 		buff.m_tmpData.clear();
 		return buff;
 	}
