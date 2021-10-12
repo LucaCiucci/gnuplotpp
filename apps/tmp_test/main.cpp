@@ -165,7 +165,7 @@ EOF
 		options.options.marker.value().pointSize = 2;
 		*/
 
-		lc::Gnuplotpp gnuplot2(std::ofstream("gnuplot-commands.txt"));
+		lc::Gnuplotpp gnuplot2(std::make_unique<std::ofstream>("gnuplot-commands.txt"));
 		gnuplot.plot(data/*, options*/);
 		//gnuplot2.plot(data, options);
 

@@ -22,6 +22,9 @@ LC_NOTICE_END */
 #include <optional>
 #include <list>
 #include <memory>
+#include <filesystem>
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #include <concepts>
 
 #if defined(_WIN32) || defined (_MSVC_VER)
@@ -67,21 +70,23 @@ namespace lc
 		};
 
 		// ================================================================
-		//                         GNUPLOT PIPE
+		//                       PIPE Streambuf
 		// ================================================================
 
-		// This class represents a pipe to gnuplot. It is a write only pipe
-		// (ofstream). In the future it will be bidirectional.
-		class GnuplotPipe : NonCopyable, public std::ofstream
+		// https://en.cppreference.com/w/cpp/io/basic_streambuf
+		// http://www.cplusplus.com/reference/ostream/ostream/
+		// https://codereview.stackexchange.com/questions/185490/custom-ostream-for-a-println-like-function
+		// https://siware.dev/007-cpp-custom-streambuf/
+		// https://siware.dev/007-cpp-custom-streambuf/
+		// https://blog.csdn.net/tangyin025/article/details/50487544
+		// TODO add to LC library
+		class PipeStreamBuf : public std::streambuf, NonCopyable
 		{
-		protected:
-			class CommandLineID;
-			class CommandLineIDImpl;
-		protected:
+		public:
 
+			PipeStreamBuf(const std::string& command, size_t buffSize = 1 << 10);
 
-			// Init the pipe
-			bool init(bool persist);
+			~PipeStreamBuf() override;
 
 			// check if the pipe is open
 			bool isOpen(void) const { return m_pipe; };
@@ -89,56 +94,75 @@ namespace lc
 			// check if the pipe is open
 			operator bool() const { return this->isOpen(); };
 
-		public:
+		protected:
 
-			~GnuplotPipe();
+			// this is the function that synchronizes the pipe (i.e. flushes)
+			int sync(void) override;
 
-			CommandLineID createNewID(void);
+			// this is the function that takes a sequence of chars and puts it in the
+			// buffer optionally calling overflow()
+			//std::streamsize xsputn(const char* ptr, std::streamsize count) override;
 
-			void cleanIDs(void);
+			// this is the function the flushes the buffer into the pie
+			int_type overflow(int_type ch = std::char_traits<char>::eof()) override;
+
 
 		private:
+			std::vector<char> m_buff;
+			FILE* m_pipe;
+		};
+
+		// ================================================================
+		//                         GNUPLOT PIPE
+		// ================================================================
+
+		// This class represents a pipe to gnuplot. It is a write only pipe
+		// (ofstream). In the future it will be bidirectional.
+		class GnuplotPipe : NonCopyable, public std::ostream
+		{
+		public:
+
+			GnuplotPipe(bool persist);
+
+		protected:
+
+			// check if the pipe is open
+			bool isOpen(void) const { return m_pipeStreamBuf.isOpen(); };
+
+			// check if the pipe is open
+			operator bool() const { return this->isOpen(); };
+
+		private:
+			PipeStreamBuf m_pipeStreamBuf;
+		};
+
+		
+		// TODO on LC library
+		class MultiStream : NonCopyable
+		{
+		public:
+
+			// TODO concept
+			template <class T>
+			MultiStream& operator<<(const T& obj)
+			{
+				for (auto& ostream : m_ostreams)
+					ostream << obj;
+				return *this;
+			}
+
+			//ostream& endl(ostream& os);
+			MultiStream& operator<<(std::ostream& (*endl)(std::ostream& os))
+			{
+				for (auto& ostream : m_ostreams)
+					ostream << endl;
+				return *this;
+			}
+
+			void addRdbuf(std::streambuf* streambuf);
 			
-			// TODO implement and use
-			std::shared_ptr<CommandLineIDImpl> createNewIDImpl(void);
-
 		private:
-			FILE* m_pipe = {};
-			std::map<size_t, std::weak_ptr<CommandLineIDImpl>> m_idMap;
-		};
-
-		// TODO lc::PrimiteveWrapper https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
-
-		struct GnuplotPipe::CommandLineIDImpl final
-		{
-			size_t id = 0;
-
-			std::function<void(void)> onExit = {};
-
-			CommandLineIDImpl() = default;
-			CommandLineIDImpl(const CommandLineIDImpl&) = default;
-			CommandLineIDImpl(CommandLineIDImpl&&) = default;
-
-			CommandLineIDImpl& operator=(const CommandLineIDImpl&) = default;
-			CommandLineIDImpl& operator=(CommandLineIDImpl&&) = default;
-		};
-
-		class GnuplotPipe::CommandLineID final : public std::shared_ptr<GnuplotPipe::CommandLineIDImpl>
-		{
-		public:
-			using shared_ptr::shared_ptr;
-
-			CommandLineID(const CommandLineID&) = default;
-			CommandLineID(CommandLineID&&) = default;
-
-			CommandLineID& operator=(const CommandLineID&) = default;
-			CommandLineID& operator=(CommandLineID&&) = default;
-
-		private:
-			CommandLineID() = delete;
-			CommandLineID(std::shared_ptr<GnuplotPipe::CommandLineIDImpl> id) : shared_ptr(id) {};
-
-			friend class GnuplotPipe;
+			std::list<std::ostream> m_ostreams;
 		};
 	}
 
@@ -148,7 +172,7 @@ namespace lc
 
 	// This is the main Gnuplot++ class.s
 	// TODO on a custom stream instead of pipe
-	class Gnuplotpp : public _gnuplot_impl_::GnuplotPipe
+	class Gnuplotpp : public _gnuplot_impl_::MultiStream
 	{
 	public:
 
@@ -208,6 +232,42 @@ namespace lc
 		};
 #endif
 
+		// ============== ID ==============
+
+		// TODO lc::PrimiteveWrapper https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
+
+		struct CommandLineIDImpl final
+		{
+			size_t id = 0;
+
+			std::function<void(void)> onExit = {};
+
+			CommandLineIDImpl() = default;
+			CommandLineIDImpl(const CommandLineIDImpl&) = default;
+			CommandLineIDImpl(CommandLineIDImpl&&) = default;
+
+			CommandLineIDImpl& operator=(const CommandLineIDImpl&) = default;
+			CommandLineIDImpl& operator=(CommandLineIDImpl&&) = default;
+		};
+
+		class CommandLineID final : public std::shared_ptr<CommandLineIDImpl>
+		{
+		public:
+			using shared_ptr::shared_ptr;
+
+			CommandLineID(const CommandLineID&) = default;
+			CommandLineID(CommandLineID&&) = default;
+
+			CommandLineID& operator=(const CommandLineID&) = default;
+			CommandLineID& operator=(CommandLineID&&) = default;
+
+		private:
+			CommandLineID() = delete;
+			CommandLineID(std::shared_ptr<CommandLineIDImpl> id) : shared_ptr(id) {};
+
+			friend class Gnuplotpp;
+		};
+
 		// =========== buffers ============
 
 		class DataBuffer;
@@ -259,8 +319,8 @@ namespace lc
 
 		struct GnuplotSerializable
 		{
-			virtual void prepare(GnuplotPipe& os) const = 0;
-			virtual void print(GnuplotPipe& os) const = 0;
+			virtual void prepare(Gnuplotpp& os) const = 0;
+			virtual void print(Gnuplotpp& os) const = 0;
 		};
 
 		struct GnuplotSerializer : public GnuplotSerializable, _gnuplot_impl_::NonCopyable
@@ -280,8 +340,8 @@ namespace lc
 
 			MarkerSerializer(const Marker& m) : m_m(m) {};
 
-			void prepare(GnuplotPipe& os) const override;
-			void print(GnuplotPipe& os) const override;
+			void prepare(Gnuplotpp& os) const override;
+			void print(Gnuplotpp& os) const override;
 		};
 
 		struct LineStyle
@@ -302,8 +362,8 @@ namespace lc
 
 			LineStyleSerializer(CommandLineID id, const LineStyle& ls) : m_id(id), m_ls(ls) {};
 
-			void prepare(GnuplotPipe& os) const override;
-			void print(GnuplotPipe& os) const override;
+			void prepare(Gnuplotpp& os) const override;
+			void print(Gnuplotpp& os) const override;
 		};
 
 		enum class PlotAxes
@@ -338,8 +398,8 @@ namespace lc
 
 			PlotOptionsSerializer(const PlotOptions& opt) : m_opt(opt) {};
 
-			void prepare(GnuplotPipe& os) const override;
-			void print(GnuplotPipe& os) const override;
+			void prepare(Gnuplotpp& os) const override;
+			void print(Gnuplotpp& os) const override;
 		};
 
 		struct TicksOptions
@@ -412,9 +472,18 @@ namespace lc
 		// ================================
 
 		// Default constructor
-		Gnuplotpp(bool persist = true);
+		Gnuplotpp(bool persist = true, size_t buffSize = 1 << 10);
 
-		Gnuplotpp(std::ofstream&& file);
+		// use a file
+		Gnuplotpp(std::ofstream&& oFileStream);
+
+		// use a different ostream
+		// not necessary, unique is convertible to shared...
+		// TODO modify to avoid ambiguity
+		//Gnuplotpp(std::unique_ptr<std::ostream>&& ostream);
+
+		// use a different ostream
+		Gnuplotpp(std::shared_ptr<std::ostream> ostream);
 
 		// default move costructor
 		Gnuplotpp(Gnuplotpp&&) = default;
@@ -520,7 +589,7 @@ namespace lc
 		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
 
 		// TOOD description ...
-		void draw(std::list<Plot2dRef> plots);
+		void draw(const std::list<Plot2dRef>& plots);
 
 		void setTicksOptions(std::optional<TicksOptions> options = {});
 
@@ -547,11 +616,35 @@ namespace lc
 
 		//void lineStyle(LineStyle style);
 
+		CommandLineID createNewID(void);
+
+		void cleanIDs(void);
+
+		// impossible, see https://stackoverflow.com/questions/20774587/why-cant-stdostream-be-moved
+		//void addOstream(std::ostream&& ostream);
+
+		void addOstream(std::unique_ptr<std::ostream>&& pOstream);
+
+		void addOstream(const std::shared_ptr<std::ostream>& pOstream);
+
+		// already in MultiStream
+		//void addRdbuf(std::streambuf* streambuf);
+
+		void writeCommandsOnFile(const std::filesystem::path& path);
+
+		void writeCommandsOnFile(std::ofstream&& file);
+
 	private:
 
-		std::ostream& getCurrentStream(void);
+		// TODO implement and use
+		std::shared_ptr<CommandLineIDImpl> createNewIDImpl(void);
 
 	private:
+		std::list<std::variant<
+			std::unique_ptr<std::ostream>,
+			std::shared_ptr<std::ostream>>
+			> m_ostreams;
+		std::map<size_t, std::weak_ptr<CommandLineIDImpl>> m_idMap;
 	};
 
 	// ================================================================

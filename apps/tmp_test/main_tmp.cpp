@@ -4,7 +4,7 @@
 
 #include <gnuplotpp/gnuplotpp.hpp>
 
-int main(int argc, char** argv)
+int main_2(int argc, char** argv)
 {
     using namespace lc;
 

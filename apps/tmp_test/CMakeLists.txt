@@ -36,4 +36,4 @@ add_executable("tmp_test")
 add_dependencies("tmp_test" "gnuplotpp")
 target_link_libraries("tmp_test" PRIVATE "gnuplotpp")
 
-target_sources("tmp_test" PRIVATE "main.cpp" "main_tmp.cpp")
+target_sources("tmp_test" PRIVATE "main.cpp" "main_tmp.cpp" "main_3.cpp")
