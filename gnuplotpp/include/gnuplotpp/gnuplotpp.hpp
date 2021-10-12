@@ -635,7 +635,7 @@ namespace lc
 		// impossible, see https://stackoverflow.com/questions/20774587/why-cant-stdostream-be-moved
 		//void addOstream(std::ostream&& ostream);
 
-		void addOstream(std::unique_ptr<std::ostream>&& pOstream);
+		//void addOstream(std::unique_ptr<std::ostream>&& pOstream);
 
 		void addOstream(const std::shared_ptr<std::ostream>& pOstream);
 

@@ -915,13 +915,13 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::addOstream(std::unique_ptr<std::ostream>&& pOstream)
-	{
-		// TODO checks on pOstream
-
-		this->addRdbuf(pOstream->rdbuf());
-		m_ostreams.emplace_back(std::move(pOstream));
-	}
+	//void Gnuplotpp::addOstream(std::unique_ptr<std::ostream>&& pOstream)
+	//{
+	//	// TODO checks on pOstream
+	//
+	//	this->addRdbuf(pOstream->rdbuf());
+	//	m_ostreams.emplace_back(std::move(pOstream));
+	//}
 
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::addOstream(const std::shared_ptr<std::ostream>& pOstream)
