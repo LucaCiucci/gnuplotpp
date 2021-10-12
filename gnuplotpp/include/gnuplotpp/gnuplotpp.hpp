@@ -549,7 +549,7 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		// TODO STATIC
-		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Plot a vector of real values
@@ -564,11 +564,11 @@ namespace lc
 		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
 #endif
 
-		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 #endif
 
 		struct ErrorbarData
@@ -590,7 +590,7 @@ namespace lc
 		// Creates an errorbar plot.
 		// Data can be passes through an ErrorbarData struct, at leas one of X or Y errrors
 		// must be present
-		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 
 		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
 
