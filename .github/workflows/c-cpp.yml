@@ -2,7 +2,7 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ main custom-streams ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
