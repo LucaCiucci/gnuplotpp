@@ -522,7 +522,7 @@ namespace lc
 
 			// Style of the line connecting the points, if not set
 			// no line will be drawn
-			std::optional<LineStyle> lineStyle;
+			std::optional<LineStyle> lineStyle = {};
 
 			// The marker type and size
 			std::optional<Marker> marker = Marker{};
