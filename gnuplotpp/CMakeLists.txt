@@ -47,9 +47,11 @@ add_library(${PROJECT_NAME} STATIC)
 target_sources(
 	${PROJECT_NAME}
 	PRIVATE
-		"./include/${PROJECT_NAME}/${PROJECT_NAME}.hpp"
-		"./src/${PROJECT_NAME}.cpp"
-)
+		"include/${PROJECT_NAME}/${PROJECT_NAME}.hpp"
+        "include/gnuplotpp/classes.hpp"
+		"src/${PROJECT_NAME}.cpp"
+        "src/classes.cpp"
+ "src/pipe.hpp")
 
 target_include_directories(
 	${PROJECT_NAME}

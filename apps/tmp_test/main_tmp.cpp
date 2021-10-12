@@ -12,7 +12,7 @@ int main_2(int argc, char** argv)
     Gnuplotpp gp;
 
     //gp.setTerminal(Gnuplotpp::Terminal::PNG, "a.png", Gnuplotpp::Vector2i{ 400, 300 });
-    gp.setTerminal(Gnuplotpp::Terminal::JPEG, "a.jpg", Gnuplotpp::Vector2i{ 400, 300 });
+    gp.setTerminal(Gnuplotpp::Terminal::JPEG, "a.jpg", Vector2i{ 400, 300 });
 
     std::default_random_engine e;
     std::normal_distribution n;
@@ -42,7 +42,7 @@ int main_2(int argc, char** argv)
     // grid
     {
         Gnuplotpp gp;
-        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "grid.jpg", Gnuplotpp::Vector2i{ 400, 300 });
+        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "grid.jpg", Vector2i{ 400, 300 });
 
         auto plot = gp.plot(randVec(100), randVec(100));
 
@@ -62,7 +62,7 @@ int main_2(int argc, char** argv)
     // grid - style
     {
         Gnuplotpp gp;
-        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "grid-style.jpg", Gnuplotpp::Vector2i{ 400, 300 });
+        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "grid-style.jpg", Vector2i{ 400, 300 });
 
         auto plot = gp.plot(randVec(100), randVec(100));
 
@@ -97,7 +97,7 @@ int main_2(int argc, char** argv)
     // errorbar
     {
         Gnuplotpp gp;
-        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "errorbar.jpg", Gnuplotpp::Vector2i{ 400, 300 });
+        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "errorbar.jpg", Vector2i{ 400, 300 });
 
         size_t N = 20;
         auto plot = gp.errorbar(
@@ -125,7 +125,7 @@ int main_2(int argc, char** argv)
     // overlapped
     {
         Gnuplotpp gp;
-        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "overlapped.jpg", Gnuplotpp::Vector2i{ 400, 300 });
+        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "overlapped.jpg", Vector2i{ 400, 300 });
 
         size_t N = 20;
         auto plot1 = gp.errorbar(
@@ -163,7 +163,7 @@ int main_2(int argc, char** argv)
     // multiplot
     {
         Gnuplotpp gp;
-        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "multiplot.jpg", Gnuplotpp::Vector2i{ 800, 600 });
+        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "multiplot.jpg", Vector2i{ 800, 600 });
 
         size_t N = 20;
         auto plot1 = gp.errorbar(
@@ -222,7 +222,7 @@ int main_2(int argc, char** argv)
     // multiplot - size
     {
         Gnuplotpp gp;
-        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "multiplot-size.jpg", Gnuplotpp::Vector2i{ 800, 600 });
+        gp.setTerminal(Gnuplotpp::Terminal::JPEG, "multiplot-size.jpg", Vector2i{ 800, 600 });
 
         size_t N = 20;
         auto plot1 = gp.errorbar(

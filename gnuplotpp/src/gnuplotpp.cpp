@@ -21,109 +21,28 @@ LC_NOTICE_END */
 #include <thread>
 #include <iomanip>      // std::setw
 
-#if defined(_WIN32) || defined (_MSVC_VER)
-#define _LC_GNUPLOT_POPEN _popen
-#define _LC_GNUPLOT_PCLOSE _pclose
-#else
-#define _LC_GNUPLOT_POPEN popen
-#define _LC_GNUPLOT_PCLOSE pclose
-#endif
-
 // this macro is used to put a space
 #define _TMP_GNUPLOTPP_SPACE(s) s << " "
 
 namespace lc
 {
+	// ================================================================
+	//                         GNUPLOT PIPE
+	// ================================================================
+
+	////////////////////////////////////////////////////////////////
+	GnuplotPipe::GnuplotPipe(bool persist) :
+		std::ostream{ &m_pipeStreamBuf },
+		m_pipeStreamBuf{ persist ? "gnuplot --persist" : "gnuplot" }
+	{
+		// necessary ???
+		this->rdbuf(&m_pipeStreamBuf);
+	}
+
 	namespace _gnuplot_impl_
 	{
-		// ================================================================
-		//                       PIPE Streambuf
-		// ================================================================
 
-		////////////////////////////////////////////////////////////////
-		PipeStreamBuf::PipeStreamBuf(const std::string& command, size_t buffSize)
-		{
-			// TODO: is a buffer necessary? maybe directly print on the pipe
-			m_buff.resize(buffSize);
-
-			m_pipe = _LC_GNUPLOT_POPEN(command.c_str(), "w");
-			//m_pipe = std::fopen("a.txt", "w");
-
-			if (!m_pipe)
-				throw std::runtime_error("could not open the pipe");
-		}
-
-		////////////////////////////////////////////////////////////////
-		PipeStreamBuf::~PipeStreamBuf()
-		{
-			// for flush ??? I don't know if it is necessary
-			this->sync();
-
-			if (m_pipe)
-				_LC_GNUPLOT_PCLOSE(m_pipe);
-		}
-
-		////////////////////////////////////////////////////////////////
-		int PipeStreamBuf::sync(void)
-		{
-			// we call overflow that will flush the content of the buffer
-			if (this->overflow() == std::char_traits<char>::eof())
-				// error
-				return -1;
-
-			// success
-			return 0;
-		}
-
-		////////////////////////////////////////////////////////////////
-		PipeStreamBuf::int_type PipeStreamBuf::overflow(int_type ch)
-		{
-			std::string s;
-
-			// number of char in the buffer
-			auto N = this->pptr() - this->pbase();
-
-			s = std::string(this->pbase(), this->pptr());
-
-			if (ch != std::char_traits<char>::eof())
-			{
-				s += ch;
-				N++;
-			}
-
-			if (N > 0)
-				// print the data
-				std::fprintf(m_pipe, "%s", s.c_str());
-
-			std::fflush(m_pipe);
-
-			// reset pointers
-			this->setp(m_buff.data(), m_buff.data() + m_buff.capacity());
-
-			// success
-			// giusto ?!?!? not_eof?
-			//return std::char_traits<char>::eof() + 1;
-			return std::char_traits<char>::not_eof(ch);
-		}
-
-		// ================================================================
-		//                         GNUPLOT PIPE
-		// ================================================================
-
-		////////////////////////////////////////////////////////////////
-		GnuplotPipe::GnuplotPipe(bool persist) :
-			std::ostream{ &m_pipeStreamBuf },
-			m_pipeStreamBuf{ persist ? "gnuplot --persist" : "gnuplot" }
-		{
-			// necessary ???
-			this->rdbuf(&m_pipeStreamBuf);
-		}
-
-		////////////////////////////////////////////////////////////////
-		void MultiStream::addRdbuf(std::streambuf* streambuf)
-		{
-			m_ostreams.emplace_back(streambuf);
-		}
+		
 	}
 
 	// ================================================================
@@ -363,7 +282,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	Gnuplotpp::Gnuplotpp(bool persist, size_t buffSize)
 	{
-		this->addOstream(std::make_unique<_gnuplot_impl_::GnuplotPipe>(persist));
+		this->addOstream(std::make_unique<GnuplotPipe>(persist));
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -432,13 +351,13 @@ namespace lc
 		case Terminal::Qt:
 			gp << "set term qt";
 			if (size)
-				gp << " size " << size.value().x << ", " << size.value().y;
+				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			break;
 		case Terminal::PNG:
 			gp << "set term png";
 			if (size)
-				gp << " size " << size.value().x << ", " << size.value().y;
+				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			if (!outFile)
 				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
@@ -446,7 +365,7 @@ namespace lc
 		case Terminal::JPEG:
 			gp << "set term jpeg";
 			if (size)
-				gp << " size " << size.value().x << ", " << size.value().y;
+				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			if (!outFile)
 				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
@@ -814,7 +733,7 @@ namespace lc
 		gp << "set style line " << style.str() << std::endl;
 	}*/
 
-	Gnuplotpp::Vector2d Gnuplotpp::getMouseClick(void)
+	Vector2d Gnuplotpp::getMouseClick(void)
 	{
 		// TODO read https://docs.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session
 		// https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/
@@ -853,7 +772,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::setOrigin(const Vector2d& pos)
 	{
-		*this << "set origin " << pos.x << ", " << pos.y << std::endl;
+		*this << "set origin " << pos.x() << ", " << pos.y() << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -865,7 +784,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::setSize(const Vector2d& pos)
 	{
-		*this << "set size " << pos.x << ", " << pos.y << std::endl;
+		*this << "set size " << pos.x() << ", " << pos.y() << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -1037,10 +956,6 @@ std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Color& colo
 		<< std::dec;
 	return ostream;
 }
-std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v)
-{
-	ostream << "(" << v.x << ", " << v.y << std::endl;
-	return ostream;
-}
+
 
 #undef _TMP_GNUPLOTPP_SPACE
