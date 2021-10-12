@@ -951,13 +951,16 @@ namespace lc
 	{
 		this->addOstream(std::make_unique<std::ofstream>(std::move(file)));
 	}
+}
 
+namespace lc::_gnuplot_impl_
+{
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
 	// ================================================================
 
 	////////////////////////////////////////////////////////////////
-	Gnuplotpp::DataBuffer& endRow(Gnuplotpp::DataBuffer& buff)
+	DataBuffer& endRow(DataBuffer& buff)
 	{
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		buff.push_row(buff.m_tmpData);
@@ -973,7 +976,7 @@ namespace lc
 	// ================================
 
 	////////////////////////////////////////////////////////////////
-	Gnuplotpp::DataBuffer::DataBuffer(size_t cols) :
+	DataBuffer::DataBuffer(size_t cols) :
 		m_cols(cols)
 	{
 		assert(("cols must be > 0", cols > 0));
@@ -984,7 +987,7 @@ namespace lc
 	// ================================
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::DataBuffer::push_row(std::list<double> row)
+	void DataBuffer::push_row(std::list<double> row)
 	{
 		if (row.size() != this->cols())
 			throw std::runtime_error("row size must be equal to the number of cols");
@@ -994,18 +997,20 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	Gnuplotpp::DataBuffer& Gnuplotpp::DataBuffer::operator<<(const double value)
+	DataBuffer& DataBuffer::operator<<(const double value)
 	{
 		m_tmpData.push_back(value);
 		return *this;
 	}
 
 	////////////////////////////////////////////////////////////////
-	Gnuplotpp::DataBuffer& Gnuplotpp::DataBuffer::operator<<(std::function<DataBuffer&(DataBuffer&)> f)
+	DataBuffer& DataBuffer::operator<<(std::function<DataBuffer& (DataBuffer&)> f)
 	{
 		return f(*this);
 	}
 }
+
+
 
 std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::DataBuffer& buffer)
 {
