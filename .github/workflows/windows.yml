@@ -1,0 +1,20 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  msvc2019:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: cmake
+      run: cmake -S . -B build -G "Visual Studio 16 2019"
+    - name: build
+      run: cmake --build build
+
+# https://github.com/nlohmann/json/blob/develop/.github/workflows/windows.yml
