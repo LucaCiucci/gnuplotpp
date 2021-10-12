@@ -561,7 +561,7 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
+		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
 #endif
 
 		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions{});
