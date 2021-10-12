@@ -96,7 +96,7 @@ EOF
 	for (const auto& y : v)
 		buffer << (int)y << lc::endRow;
 	//gnuplot.plot(buffer);
-	gnuplot.plot(std::vector<float>{ 42, 40, 30, 20, 10, 0 }/*, {.spacing = 0.1, .options = {.title = "Hello There!"}}*/);
+	gnuplot.plot(std::vector<double>{ 42, 40, 30, 20, 10, 0 }/*, {.spacing = 0.1, .options = {.title = "Hello There!"}}*/);
 
 	if (0)
 	{//gnuplot << "set mxtics 2" << std::endl;

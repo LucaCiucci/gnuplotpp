@@ -24,8 +24,10 @@ LC_NOTICE_END */
 #include <memory>
 #include <filesystem>
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if __has_include(<concepts>)
+#define _GNUPLOTPP_USE_CONCEPTS
 #include <concepts>
+#endif
 
 #if defined(_WIN32) || defined (_MSVC_VER)
 #include <Windows.h>
@@ -549,6 +551,7 @@ namespace lc
 		// TODO STATIC
 		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = {});
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Plot a vector of real values
 		// Note that options.cols is ignored
 		// examples:
@@ -559,11 +562,14 @@ namespace lc
 		// TODO update examples
 		template <std::convertible_to<double> Ty>
 		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = {});
+#endif
 
 		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = {});
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		template <std::convertible_to<double> Ty>
 		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = {});
+#endif
 
 		struct ErrorbarData
 		{
@@ -711,6 +717,7 @@ namespace lc
 		//  - [list<double>] row : the row to insert
 		void push_row(std::list<double> row);
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Insert a row in the form of a container of values convertible to double.
 		// The row size shall be equal to the column count
 		// params:
@@ -718,7 +725,9 @@ namespace lc
 		template <std::ranges::range Container>
 		requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
 		void push_row(Container row);
+#endif
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Insert a row in the form of a container of values convertible to double.
 		// The row size shall be equal to the column count
 		// params:
@@ -726,6 +735,7 @@ namespace lc
 		template <std::ranges::range Container>
 		requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
 		DataBuffer& operator<<(Container row);
+#endif
 
 		// Insest data gradually, value by value, for example:
 		// buff << x << y << lc::endRow;
@@ -774,6 +784,7 @@ namespace lc
 	//          COMUNICATION
 	// ================================
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::convertible_to<double> Ty>
 	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions)
@@ -784,7 +795,9 @@ namespace lc
 			v.push_back(y);
 		return this->plot(v, singlePlotOptions);
 	}
+#endif
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::convertible_to<double> Ty>
 	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions)
@@ -797,6 +810,7 @@ namespace lc
 			vy.push_back(y);
 		return this->plot(vx, vy, singlePlotOptions);
 	}
+#endif
 
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
@@ -810,6 +824,7 @@ namespace lc
 	//             DATA
 	// ================================
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::ranges::range Container>
 	requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
@@ -823,7 +838,9 @@ namespace lc
 		// call the double push_row() function
 		this->push_row(v);
 	}
+#endif
 
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 	////////////////////////////////////////////////////////////////
 	template <std::ranges::range Container>
 	requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
@@ -832,4 +849,5 @@ namespace lc
 		this->push_row(row);
 		return *this;
 	}
+#endif
 }

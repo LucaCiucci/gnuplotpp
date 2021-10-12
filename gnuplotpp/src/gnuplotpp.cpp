@@ -959,7 +959,11 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	Gnuplotpp::DataBuffer& endRow(Gnuplotpp::DataBuffer& buff)
 	{
+#if defined(_GNUPLOTPP_USE_CONCEPTS)
 		buff.push_row(buff.m_tmpData);
+#else
+		buff.push_row(std::list<double>(buff.m_tmpData.begin(), buff.m_tmpData.end()));
+#endif
 		buff.m_tmpData.clear();
 		return buff;
 	}
