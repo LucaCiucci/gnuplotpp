@@ -93,7 +93,7 @@ namespace lc
 
 			if (N > 0)
 				// print the data
-				std::fprintf(m_pipe, s.c_str());
+				std::fprintf(m_pipe, "%s", s.c_str());
 
 			std::fflush(m_pipe);
 
@@ -915,13 +915,13 @@ namespace lc
 	}
 
 	////////////////////////////////////////////////////////////////
-	void Gnuplotpp::addOstream(std::unique_ptr<std::ostream>&& pOstream)
-	{
-		// TODO checks on pOstream
-
-		this->addRdbuf(pOstream->rdbuf());
-		m_ostreams.emplace_back(std::move(pOstream));
-	}
+	//void Gnuplotpp::addOstream(std::unique_ptr<std::ostream>&& pOstream)
+	//{
+	//	// TODO checks on pOstream
+	//
+	//	this->addRdbuf(pOstream->rdbuf());
+	//	m_ostreams.emplace_back(std::move(pOstream));
+	//}
 
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::addOstream(const std::shared_ptr<std::ostream>& pOstream)
