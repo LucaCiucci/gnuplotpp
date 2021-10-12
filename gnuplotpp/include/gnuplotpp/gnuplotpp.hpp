@@ -43,8 +43,6 @@ namespace lc
 {
 	// TDOO read http://videocortex.io/2017/custom-stream-buffers/
 
-	class Gnuplotpp;
-
 	namespace _gnuplot_impl_
 	{
 		// https://github.com/LucaCiucci/LC/blob/d709ae3e40c469be148c4d71c8b77eb8993151dc/include/LC/utils/types/NonCopyable/NonCopyable#L7
@@ -168,6 +166,32 @@ namespace lc
 		private:
 			std::list<std::ostream> m_ostreams;
 		};
+	}
+
+	// ================================================================
+	//                       GNUPLOT++ INTERFACE
+	// ================================================================
+
+	// This is the main Gnuplot++ class.s
+	// TODO on a custom stream instead of pipe
+	class Gnuplotpp : public _gnuplot_impl_::MultiStream
+	{
+	public:
+
+		// ================================
+		//        STATIC CONSTANTS
+		// ================================
+
+		// ====== special sequences =======
+
+		// "e"
+		static const char* Datablock_E;
+
+		// "EOF"
+		static const char* Datablock_EOF;
+
+		// "EOD"
+		static const char* Datablock_EOD;
 
 		// ================================
 		//        SUB-CLASSES/ENUMS
@@ -440,127 +464,10 @@ namespace lc
 
 		struct MultiplotGuard final : private _gnuplot_impl_::ScopeGuard
 		{
-			MultiplotGuard(Gnuplotpp* pGp);
+			MultiplotGuard(Gnuplotpp* pGp) : ScopeGuard([pGp]() { pGp->endMultiplot(); }) {};
 			operator bool() const { return true; };
 			friend class Gnuplotpp;
 		};
-	}
-
-	// ================================================================
-	//                       GNUPLOT++ INTERFACE
-	// ================================================================
-
-	// This is the main Gnuplot++ class.s
-	// TODO on a custom stream instead of pipe
-	class Gnuplotpp : public _gnuplot_impl_::MultiStream
-	{
-	public:
-
-		// ================================
-		//        STATIC CONSTANTS
-		// ================================
-
-		// ====== special sequences =======
-
-		// "e"
-		static const char* Datablock_E;
-
-		// "EOF"
-		static const char* Datablock_EOF;
-
-		// "EOD"
-		static const char* Datablock_EOD;
-
-		// ================================
-		//        SUB-CLASSES/ENUMS
-		// ================================
-		// (see de definition of this stuff for additional info)
-
-		// ========== geometry ============
-
-		// If the LC library is included, Vector2d = lc::Vector2d, otherwise
-		// we define a custom struct
-#ifdef _GNUPLOTPP_USE_LC_LIBRARY
-		using Vector2d = lc::Vector2d;
-#else
-		// This class represents a 2 dimensianl vector of double
-		struct Vector2d
-		{
-			// ================================
-			//           COORDINATES
-			// ================================
-
-			// TODO as access funcions
-			double x = 0;
-			double y = 0;
-		};
-#endif
-
-#ifdef _GNUPLOTPP_USE_LC_LIBRARY
-		using Vector2d = lc::Vector2i;
-#else
-		// This class represents a 2 dimensianl vector of int
-		struct Vector2i
-		{
-			// ================================
-			//           COORDINATES
-			// ================================
-
-			// TODO as access funcions
-			int x = 0;
-			int y = 0;
-		};
-#endif
-
-		// ============== ID ==============
-
-		// TODO lc::PrimiteveWrapper https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
-
-		using CommandLineIDImpl = _gnuplot_impl_::CommandLineIDImpl;
-
-		using CommandLineID = _gnuplot_impl_::CommandLineID;
-
-		// =========== buffers ============
-
-		using DataBuffer = _gnuplot_impl_::DataBuffer;
-
-		// ============ ... ===============
-
-		using ErrorBar = _gnuplot_impl_::ErrorBar;
-
-		using PlotStyle = _gnuplot_impl_::PlotStyle;
-
-		using Color = _gnuplot_impl_::Color;
-
-		using PointType = _gnuplot_impl_::PointType;
-
-		using GnuplotSerializable = _gnuplot_impl_::GnuplotSerializable;
-
-		using GnuplotSerializer = _gnuplot_impl_::GnuplotSerializer;
-
-		using Marker = _gnuplot_impl_::Marker;
-
-		using MarkerSerializer = _gnuplot_impl_::MarkerSerializer;
-
-		using LineStyle = _gnuplot_impl_::LineStyle;
-
-		using LineStyleSerializer = _gnuplot_impl_::LineStyleSerializer;
-
-		using PlotAxes = _gnuplot_impl_::PlotAxes;
-
-		using PlotOptions = _gnuplot_impl_::PlotOptions;
-
-		using PlotOptionsSerializer = _gnuplot_impl_::PlotOptionsSerializer;
-
-		using TicksOptions = _gnuplot_impl_::TicksOptions;
-
-		using GridOptions = _gnuplot_impl_::GridOptions;
-
-		using Plot2d = _gnuplot_impl_::Plot2d;
-
-		using Terminal = _gnuplot_impl_::Terminal;
-
-		using MultiplotGuard = _gnuplot_impl_::MultiplotGuard;
 
 		// ================================
 		//          CONSTRUCTORS
@@ -746,20 +653,15 @@ namespace lc
 		std::map<size_t, std::weak_ptr<CommandLineIDImpl>> m_idMap;
 	};
 
-	
-}
-
-namespace lc::_gnuplot_impl_
-{
 	// ================================================================
 	//                      GNUPLOT++ DATA BUFFER
 	// ================================================================
 
 	// funciton used to end a row while pushing data into a buffer value by value, for example:
 	// buff << x << y << lc::endRow;
-	DataBuffer& endRow(DataBuffer& buff);
+	Gnuplotpp::DataBuffer& endRow(Gnuplotpp::DataBuffer& buff);
 
-	class DataBuffer
+	class Gnuplotpp::DataBuffer
 	{
 	public:
 
@@ -822,7 +724,7 @@ namespace lc::_gnuplot_impl_
 		//  - [Constainer of convertible to double] row : the row to insert
 		template <std::ranges::range Container>
 		requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
-			void push_row(Container row);
+		void push_row(Container row);
 #endif
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
@@ -832,7 +734,7 @@ namespace lc::_gnuplot_impl_
 		//  - [Constainer of convertible to double] row : the row to insert
 		template <std::ranges::range Container>
 		requires (std::convertible_to<std::ranges::range_value_t<Container>, double>)
-			DataBuffer& operator<<(Container row);
+		DataBuffer& operator<<(Container row);
 #endif
 
 		// Insest data gradually, value by value, for example:
@@ -841,7 +743,7 @@ namespace lc::_gnuplot_impl_
 		DataBuffer& operator<<(const double value);
 
 		// TODO description
-		DataBuffer& operator<<(std::function<DataBuffer& (DataBuffer&)> f);
+		DataBuffer& operator<<(std::function<DataBuffer&(DataBuffer&)> f);
 
 	private:
 
@@ -852,11 +754,6 @@ namespace lc::_gnuplot_impl_
 		std::vector<double> m_data;
 		std::vector<double> m_tmpData;
 	};
-}
-
-namespace lc
-{
-	using _gnuplot_impl_::endRow;
 }
 
 std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::DataBuffer& buffer);
@@ -871,12 +768,6 @@ std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v
 
 namespace lc
 {
-	// !!!!!!
-	inline _gnuplot_impl_::MultiplotGuard::MultiplotGuard(Gnuplotpp* pGp) : ScopeGuard([pGp]()
-		{ pGp->endMultiplot(); })
-	{
-	};
-
 	// ================================================================
 	//                       GNUPLOT++ INTERFACE
 	// ================================================================
