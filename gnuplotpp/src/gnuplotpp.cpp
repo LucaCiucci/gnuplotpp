@@ -21,109 +21,32 @@ LC_NOTICE_END */
 #include <thread>
 #include <iomanip>      // std::setw
 
-#if defined(_WIN32) || defined (_MSVC_VER)
-#define _LC_GNUPLOT_POPEN _popen
-#define _LC_GNUPLOT_PCLOSE _pclose
-#else
-#define _LC_GNUPLOT_POPEN popen
-#define _LC_GNUPLOT_PCLOSE pclose
-#endif
-
 // this macro is used to put a space
 #define _TMP_GNUPLOTPP_SPACE(s) s << " "
 
+// !!!
+#undef max
+#undef min
+
 namespace lc
 {
+	// ================================================================
+	//                         GNUPLOT PIPE
+	// ================================================================
+
+	////////////////////////////////////////////////////////////////
+	GnuplotPipe::GnuplotPipe(bool persist) :
+		std::ostream{ &m_pipeStreamBuf },
+		m_pipeStreamBuf{ persist ? "gnuplot --persist" : "gnuplot" }
+	{
+		// necessary ???
+		this->rdbuf(&m_pipeStreamBuf);
+	}
+
 	namespace _gnuplot_impl_
 	{
-		// ================================================================
-		//                       PIPE Streambuf
-		// ================================================================
 
-		////////////////////////////////////////////////////////////////
-		PipeStreamBuf::PipeStreamBuf(const std::string& command, size_t buffSize)
-		{
-			// TODO: is a buffer necessary? maybe directly print on the pipe
-			m_buff.resize(buffSize);
-
-			m_pipe = _LC_GNUPLOT_POPEN(command.c_str(), "w");
-			//m_pipe = std::fopen("a.txt", "w");
-
-			if (!m_pipe)
-				throw std::runtime_error("could not open the pipe");
-		}
-
-		////////////////////////////////////////////////////////////////
-		PipeStreamBuf::~PipeStreamBuf()
-		{
-			// for flush ??? I don't know if it is necessary
-			this->sync();
-
-			if (m_pipe)
-				_LC_GNUPLOT_PCLOSE(m_pipe);
-		}
-
-		////////////////////////////////////////////////////////////////
-		int PipeStreamBuf::sync(void)
-		{
-			// we call overflow that will flush the content of the buffer
-			if (this->overflow() == std::char_traits<char>::eof())
-				// error
-				return -1;
-
-			// success
-			return 0;
-		}
-
-		////////////////////////////////////////////////////////////////
-		PipeStreamBuf::int_type PipeStreamBuf::overflow(int_type ch)
-		{
-			std::string s;
-
-			// number of char in the buffer
-			auto N = this->pptr() - this->pbase();
-
-			s = std::string(this->pbase(), this->pptr());
-
-			if (ch != std::char_traits<char>::eof())
-			{
-				s += ch;
-				N++;
-			}
-
-			if (N > 0)
-				// print the data
-				std::fprintf(m_pipe, "%s", s.c_str());
-
-			std::fflush(m_pipe);
-
-			// reset pointers
-			this->setp(m_buff.data(), m_buff.data() + m_buff.capacity());
-
-			// success
-			// giusto ?!?!? not_eof?
-			//return std::char_traits<char>::eof() + 1;
-			return std::char_traits<char>::not_eof(ch);
-		}
-
-		// ================================================================
-		//                         GNUPLOT PIPE
-		// ================================================================
-
-		////////////////////////////////////////////////////////////////
-		GnuplotPipe::GnuplotPipe(bool persist) :
-			std::ostream{ &m_pipeStreamBuf },
-			m_pipeStreamBuf{ persist ? "gnuplot --persist" : "gnuplot" }
-		{
-			// necessary ???
-			this->rdbuf(&m_pipeStreamBuf);
-		}
-
-		////////////////////////////////////////////////////////////////
-		void MultiStream::addRdbuf(std::streambuf* streambuf)
-		{
-			m_ostreams.emplace_back(streambuf);
-		}
+		
 	}
 
 	// ================================================================
@@ -283,17 +206,17 @@ namespace lc
 		{
 			switch (m_opt.errorBars.value())
 			{
-			case ErrorBar::X:
+			case ErrorBarDir::X:
 				_TMP_GNUPLOTPP_SPACE(os);
 				os << "with ";
 				os << ((m_opt.lineStyle) ? "xerrorlines" : "xerr");
 				break;
-			case ErrorBar::Y:
+			case ErrorBarDir::Y:
 				_TMP_GNUPLOTPP_SPACE(os);
 				os << "with ";
 				os << ((m_opt.lineStyle) ? "yerrorlines" : "yerr");
 				break;
-			case ErrorBar::XY:
+			case ErrorBarDir::XY:
 				_TMP_GNUPLOTPP_SPACE(os);
 				os << "with ";
 				os << ((m_opt.lineStyle) ? "xyerrorlines" : "xyerrorbars");
@@ -355,6 +278,137 @@ namespace lc
 		}
 	}
 
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::PlotOptions Gnuplotpp::Plot2d::getOptions(void) const
+	{
+		auto options = BASE::getOptions();
+		if (this->xData.size() > 0 || this->options.spacing)
+			options.cols = { 0, 1 };
+		else
+			options.cols = { 0 };
+		return options;
+	}
+
+	// TODO private namespace and change name
+	double m_ValueOrConstant(const std::vector<double>& v, size_t i)
+	{
+		assert(v.size() > 0);
+		return (i < v.size()) ? v[i] : v.back();
+	}
+
+	// TODO private namespace and change name
+	double m_ValueOrSpacing(const std::vector<double>& v, size_t i, double spacing)
+	{
+		return (i < v.size()) ? v[i] : (spacing * i);
+	}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::DataBuffer Gnuplotpp::Plot2d::getData(void) const
+	{
+		DataBuffer buffer;
+
+		if (this->xData.size() > 0)
+			if (this->xData.size() != this->yData.size())
+				throw std::runtime_error("wrong sizes");
+
+		if (this->xData.size() > 0 || this->options.spacing)
+			buffer = DataBuffer(2);
+
+		double spacing = 0;
+		if (this->options.spacing)
+			spacing = this->options.spacing.value();
+		// TODO reserve
+
+		for (size_t i = 0; i < this->yData.size(); i++)
+		{
+			// X
+			if (this->xData.size() > 0 || this->options.spacing)
+				buffer << m_ValueOrSpacing(this->xData, i, spacing);
+
+			// Y
+			buffer << this->yData[i];
+
+			// ;
+			buffer << endRow;
+		}
+
+		return buffer;
+	}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::PlotOptions Gnuplotpp::Errorbar::getOptions(void) const
+	{
+		auto options = BASE::getOptions();
+
+		if (this->xErr.size() > 0)
+			options.errorBars = ErrorBarDir::X, options.cols = { 0, 1, 2 };
+		if (this->yErr.size() > 0)
+			options.errorBars = ErrorBarDir::Y, options.cols = { 0, 1, 2 };
+		if (this->xErr.size() > 0 && this->yErr.size() > 0)
+			options.errorBars = ErrorBarDir::XY, options.cols = { 0, 1, 2, 3 };
+
+		return options;
+	}
+
+	////////////////////////////////////////////////////////////////
+	Gnuplotpp::DataBuffer Gnuplotpp::Errorbar::getData(void) const
+	{
+		struct ColumnIndices
+		{
+			std::optional<size_t> x, y, dx, dy;
+		};
+
+		size_t indicesCounter = 0;
+		ColumnIndices indices;
+
+		indices.x = indicesCounter++;
+		indices.y = indicesCounter++;
+
+		size_t N = std::max(this->x.size(), this->y.size());
+
+		if (this->x.size() <= 0 && this->y.size() <= 0)
+			throw std::runtime_error("errorbar: no x-y data");
+
+		if (this->x.size() != this->y.size() || ((this->x.size() == 0 || this->y.size() == 0) && !this->options.spacing))
+			if (this->x.size() > 0 && this->y.size() > 0)
+				throw std::runtime_error("invalid data sizes");
+
+		double spacing = 1;
+		if (this->options.spacing)
+			spacing = this->options.spacing.value();
+
+		if (this->xErr.size() <= 0 && this->yErr.size())
+			throw std::runtime_error("errorbar: no x-y error data");
+
+		if (
+			this->xErr.size() != this->x.size() && this->xErr.size() != 1 &&
+			this->yErr.size() != this->y.size() && this->yErr.size() != 1
+			)
+			throw std::runtime_error("invalid error-data sizes");
+
+		if (this->xErr.size() > 0) indices.dx = indicesCounter++;
+		if (this->yErr.size() > 0) indices.dy = indicesCounter++;
+
+		DataBuffer buffer(indicesCounter);
+		for (size_t i = 0; i < N; i++)
+		{
+			if (indices.x)
+				buffer << m_ValueOrSpacing(this->x, i, spacing);
+
+			if (indices.y)
+				buffer << m_ValueOrSpacing(this->y, i, spacing);
+
+			if (indices.dx)
+				buffer << m_ValueOrConstant(this->xErr, i);
+
+			if (indices.dy)
+				buffer << m_ValueOrConstant(this->yErr, i);
+
+			buffer << endRow;
+		}
+
+		return buffer;
+	}
 
 	// ================================
 	//          CONSTRUCTORS
@@ -363,7 +417,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	Gnuplotpp::Gnuplotpp(bool persist, size_t buffSize)
 	{
-		this->addOstream(std::make_unique<_gnuplot_impl_::GnuplotPipe>(persist));
+		this->addOstream(std::make_unique<GnuplotPipe>(persist));
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -432,13 +486,13 @@ namespace lc
 		case Terminal::Qt:
 			gp << "set term qt";
 			if (size)
-				gp << " size " << size.value().x << ", " << size.value().y;
+				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			break;
 		case Terminal::PNG:
 			gp << "set term png";
 			if (size)
-				gp << " size " << size.value().x << ", " << size.value().y;
+				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			if (!outFile)
 				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
@@ -446,7 +500,7 @@ namespace lc
 		case Terminal::JPEG:
 			gp << "set term jpeg";
 			if (size)
-				gp << " size " << size.value().x << ", " << size.value().y;
+				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			if (!outFile)
 				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
@@ -491,34 +545,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	Gnuplotpp::Plot2d Gnuplotpp::plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions)
 	{
-		Plot2d plot;
-
-		// buffer with 1 column
-		plot.pBuffer = std::make_unique<DataBuffer>(1);
-		auto& buffer = *plot.pBuffer.get();
-
-		plot.pOptions = std::make_unique<PlotOptions>((PlotOptions)singlePlotOptions);
-		auto& options = *plot.pOptions.get();
-
-		if (singlePlotOptions.spacing)
-		{
-			buffer = DataBuffer(2);
-
-			// TODO RESERVE
-			size_t counter = 0;
-			for (const auto& y : data)
-				buffer << ((counter++) * singlePlotOptions.spacing.value()) << y << endRow;
-			options.cols = { 0, 1 };
-		}
-		else
-		{
-			// TODO RESERVE
-			for (const auto& y : data)
-				buffer << y << endRow;
-			options.cols = { 0 };
-		}
-
-		return plot;
+		return Gnuplotpp::plot({}, data, singlePlotOptions);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -526,152 +553,43 @@ namespace lc
 	{
 		Plot2d plot;
 
-		// buffer with 2 columns
-		plot.pBuffer = std::make_unique<DataBuffer>(2);
-		auto& buffer = *plot.pBuffer.get();
-
-		plot.pOptions = std::make_unique<PlotOptions>((PlotOptions)singlePlotOptions);
-		auto& options = *plot.pOptions.get();
-
-		if (xData.size() != yData.size())
-			throw std::runtime_error(
-				(std::string)"in Gnuplotpp::plot, xData.size() must be equal to yData.size() but they were "
-				+ std::to_string(xData.size()) + ", " + std::to_string(yData.size())
-			);
-
-		// TODO RESERVE
-		for (size_t i = 0; i < xData.size(); i++)
-			buffer << xData[i] << yData[i] << endRow;
-		options.cols = { 0, 1 };
+		plot.xData = xData;
+		plot.yData = yData;
+		plot.options = singlePlotOptions;
 
 		return plot;
 	}
 
-	Gnuplotpp::Plot2d Gnuplotpp::errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions)
+	Gnuplotpp::Errorbar Gnuplotpp::errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions)
 	{
-		Plot2d plot;
-
-		plot.pOptions = std::make_unique<PlotOptions>((PlotOptions)singlePlotOptions);
-		auto& options = *plot.pOptions.get();
-
-		struct ColumnIndices
-		{
-			std::optional<size_t> x, y, dx, dy;
-		};
-		ColumnIndices indices;
-
-		{
-			double spacing = singlePlotOptions.spacing ? singlePlotOptions.spacing.value() : 1;
-			if (data.x.size() <= 0)
-				for (size_t i = 0; i < data.y.size(); i++)
-					data.x.push_back(i * spacing);
-		}
-
-		size_t indicesCounter = 0;
-		{
-			if (data.x.size() > 0)
-				indices.x = indicesCounter++;
-			indices.y = indicesCounter++;
-			if (data.xErr.size() > 0)
-				indices.dx = indicesCounter++;
-			if (data.yErr.size() > 0)
-				indices.dy = indicesCounter++;
-		}
-
-		if ((!indices.dx) && (!indices.dy))
-			throw std::runtime_error("Gnuplotpp::errorbar() requires errors on at least one axis");
-		if (indices.x)
-			if (data.x.size() != data.y.size())
-				throw std::runtime_error(
-					(std::string)"in Gnuplotpp::errorbar(), data.x.size() must be equal to data.y.size() but sizes were: "
-					+ std::to_string(data.x.size()) + ", " + std::to_string(data.y.size()));
-		if (indices.dx)
-			if (data.xErr.size() > 1)
-				if (data.xErr.size() != data.y.size())
-					throw std::runtime_error(
-						(std::string)"in Gnuplotpp::errorbar(), data.xErr.size() must be equal to data.y.size() or a single value but sizes were: "
-						+ std::to_string(data.xErr.size()) + ", " + std::to_string(data.y.size()));
-		if (indices.dy)
-			if (data.yErr.size() > 1)
-				if (data.yErr.size() != data.y.size())
-					throw std::runtime_error(
-						(std::string)"in Gnuplotpp::errorbar(), data.yErr.size() must be equal to data.y.size() or a single value but sizes were: "
-						+ std::to_string(data.yErr.size()) + ", " + std::to_string(data.y.size()));
-
-		{
-			if (indices.dx)
-				options.errorBars = ErrorBar::X;
-			if (indices.dy)
-				options.errorBars = ErrorBar::Y;
-			if (indices.dx && indices.dy)
-				options.errorBars = ErrorBar::XY;
-		}
-
-		auto buildErrs = [&](std::vector<double>& v) -> void
-		{
-			if (v.size() == 1)
-			{
-				v.resize(data.y.size());
-				std::fill(v.begin(), v.end(), v.front());
-			}
-		};
-		buildErrs(data.xErr);
-		buildErrs(data.yErr);
-
-		plot.pBuffer = std::make_unique<DataBuffer>(indicesCounter);
-		auto& buffer = *plot.pBuffer.get();
-
-		{
-			auto& cols = options.cols;
-			cols.clear();
-			if (indices.x) cols.push_back(indices.x.value());
-			if (indices.y) cols.push_back(indices.y.value());
-			if (indices.dx) cols.push_back(indices.dx.value());
-			if (indices.dy) cols.push_back(indices.dy.value());
-		}
-		for (size_t i = 0; i < data.y.size(); i++)
-		{
-			if (indices.x)
-				buffer << data.x[i];
-
-			if (indices.y)
-				buffer << data.y[i];
-
-			if (indices.dx)
-				buffer << data.xErr[i];
-
-			if (indices.dy)
-				buffer << data.yErr[i];
-
-			buffer << endRow;
-		}
-
-		// TODO singlePlotOptions.spacing
-
+		Errorbar plot;
+		(ErrorbarData&)plot = data;
+		plot.options = singlePlotOptions;
 		return plot;
 	}
 
 	// TODO move
-	void m_forEachPlot(std::list<Gnuplotpp::Plot2dRef> plots, std::function<void(Gnuplotpp::Plot2d&, bool first)> func)
+	void m_forEachPlot(std::list<Gnuplotpp::Plot2dRef> plots, std::function<void(const Gnuplotpp::Plot2dBase&, bool first)> func)
 	{
-		using Plot2d = Gnuplotpp::Plot2d;
+		using Plot2dBase = Gnuplotpp::Plot2dBase;
+
+		bool first = true;
 
 		for (auto it = plots.begin(); it != plots.end(); it++)
 		{
-			Plot2d* m_pPlot = nullptr;
+			const Plot2dBase* m_pPlot = nullptr;
 			{
-				if (auto* pRef = std::get_if<std::reference_wrapper<Plot2d>>(&*it))
+				if (const auto* pRef = std::get_if<std::reference_wrapper<const Plot2dBase>>(&*it))
 					m_pPlot = &pRef->get();
-				if (auto* pPtr = std::get_if<std::shared_ptr<Plot2d>>(&*it))
-				{
-					if (!*pPtr)
-						continue;
+				if (const auto* pPtr = std::get_if<std::shared_ptr<const Plot2dBase>>(&*it))
 					m_pPlot = pPtr->get();
-				}
+				if (!m_pPlot)
+					continue;
 			}
-			Plot2d& plot = *m_pPlot;
+			const Plot2dBase& plot = *m_pPlot;
 
-			func(plot, it == plots.begin());
+			func(plot, first);
+			first = false;
 		}
 	}
 
@@ -682,32 +600,29 @@ namespace lc
 		// alias "gnuplot"
 		auto& gp = *this;
 
-		m_forEachPlot(plots, [&](Plot2d& plot, bool first)
+		std::list<PlotOptionsSerializer> serializers;
+		m_forEachPlot(plots, [&](const Plot2dBase& plot, bool first)
 			{
-				if (plot.pOptions)
-				{
-					plot.pSerializer = std::make_unique<PlotOptionsSerializer>(*plot.pOptions.get());
-					plot.pSerializer->prepare(gp);
-				}
+				serializers.emplace_back(plot.getOptions());
+				serializers.back().prepare(gp);
 			}
 		);
 
 		gp << "plot";
 
-		m_forEachPlot(plots, [&](Plot2d& plot, bool first)
+		std::list<PlotOptionsSerializer>::iterator it = serializers.begin();
+		m_forEachPlot(plots, [&](const Plot2dBase& plot, bool first)
 			{
+				ScopeGuard i_guard([&]() { it++; });
+
 				if (!first)
 					gp << ",";
 
 				_TMP_GNUPLOTPP_SPACE(gp);
-				if (plot.pBuffer)
-					gp << "'-'";
+				gp << "'-'";
 
-				if (plot.pSerializer)
-				{
-					_TMP_GNUPLOTPP_SPACE(gp);
-					plot.pSerializer->print(gp);
-				}
+				_TMP_GNUPLOTPP_SPACE(gp);
+				it->print(gp);
 			}
 		);
 
@@ -715,20 +630,18 @@ namespace lc
 
 		// passing data to gnuplot
 		// see https://stackoverflow.com/questions/3318228/how-to-plot-data-without-a-separate-file-by-specifying-all-points-inside-the-gnu
-		m_forEachPlot(plots, [&](Plot2d& plot, bool first)
+		m_forEachPlot(plots, [&](const Plot2dBase& plot, bool first)
 			{
-				if (plot.pBuffer)
-				{
-					// data on new line
-					gp << std::endl;
+				// data on new line
+				gp << std::endl;
 
-					// write the data
-					gp << *plot.pBuffer.get();
+				// write the data
+				auto buffer = plot.getData();
+				gp << buffer;
 
-					// tell End Of Data
-					gp << Datablock_EOD << std::endl;
-					//gp << Datablock_E << std::endl;// <- this would do the same
-				}
+				// tell End Of Data
+				gp << Datablock_EOD << std::endl;
+				//gp << Datablock_E << std::endl;// <- this would do the same
 			}
 		);
 	}
@@ -814,7 +727,7 @@ namespace lc
 		gp << "set style line " << style.str() << std::endl;
 	}*/
 
-	Gnuplotpp::Vector2d Gnuplotpp::getMouseClick(void)
+	Vector2d Gnuplotpp::getMouseClick(void)
 	{
 		// TODO read https://docs.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session
 		// https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/
@@ -853,7 +766,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::setOrigin(const Vector2d& pos)
 	{
-		*this << "set origin " << pos.x << ", " << pos.y << std::endl;
+		*this << "set origin " << pos.x() << ", " << pos.y() << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -865,7 +778,7 @@ namespace lc
 	////////////////////////////////////////////////////////////////
 	void Gnuplotpp::setSize(const Vector2d& pos)
 	{
-		*this << "set size " << pos.x << ", " << pos.y << std::endl;
+		*this << "set size " << pos.x() << ", " << pos.y() << std::endl;
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -1037,10 +950,6 @@ std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Color& colo
 		<< std::dec;
 	return ostream;
 }
-std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v)
-{
-	ostream << "(" << v.x << ", " << v.y << std::endl;
-	return ostream;
-}
+
 
 #undef _TMP_GNUPLOTPP_SPACE

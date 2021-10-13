@@ -109,7 +109,7 @@ int safe_main_3(int argc, char** argv)
 	};
 
 	{
-		Gnuplotpp gp; gp.setTerminal(Gnuplotpp::Terminal::Qt);
+		Gnuplotpp gp; //gp.setTerminal(Gnuplotpp::Terminal::Qt);
 		gp.addRdbuf(std::cout.rdbuf());
 		gp.writeCommandsOnFile("a.p");
 
@@ -122,7 +122,7 @@ int safe_main_3(int argc, char** argv)
 
 	MyStream streamBuf;
 	std::ostream ostr(&streamBuf);
-	lc::_gnuplot_impl_::PipeStreamBuf pipe("gnuplot --persist");
+	lc::PipeStreamBuf pipe("gnuplot --persist");
 	std::ostream gp(&pipe);
 
 	gp << "plot sin(x)" << std::endl;

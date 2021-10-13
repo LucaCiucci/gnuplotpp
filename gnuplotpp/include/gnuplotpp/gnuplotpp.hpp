@@ -33,140 +33,40 @@ LC_NOTICE_END */
 #include <Windows.h>
 #endif
 
-// TODO https://github.com/LucaCiucci/LC/issues/22
-#ifdef _GNUPLOTPP_USE_LC_LIBRARY
-#include <LC/math/geometry/Vector.hpp>
-#include <LC/math/geometry/Mat.hpp>
-#endif
+#include "classes.hpp"
 
 namespace lc
 {
 	// TDOO read http://videocortex.io/2017/custom-stream-buffers/
 
-	namespace _gnuplot_impl_
+	// ================================================================
+	//                         GNUPLOT PIPE
+	// ================================================================
+
+	// This class represents a pipe to gnuplot. It is a write only pipe
+	// (ofstream). In the future it will be bidirectional.
+	// Note: it is not really necessary to have a custom class for the Gnuplot pipe
+	// bu we introduce it for clarity.
+	class GnuplotPipe : NonCopyable, public std::ostream
 	{
-		// https://github.com/LucaCiucci/LC/blob/d709ae3e40c469be148c4d71c8b77eb8993151dc/include/LC/utils/types/NonCopyable/NonCopyable#L7
-		class NonCopyable
-		{
-			NonCopyable(const NonCopyable&) = delete;
-			NonCopyable& operator=(const NonCopyable&) = delete;
-		public:
-			NonCopyable() = default;
-			NonCopyable(NonCopyable&&) = default;
-		};
+	public:
 
-		// https://github.com/LucaCiucci/LC/blob/master/include/LC/utils/types/ScopeGuard/ScopeGuard
-		class ScopeGuard : NonCopyable
-		{
-		public:
+		// Opens a pipe with gnuplot.
+		// params:
+		//  - persist : opens gnuplot with "--persist" option
+		GnuplotPipe(bool persist);
 
-			ScopeGuard(ScopeGuard&&) = default;
-			ScopeGuard(std::function<void(void)> cleanup_function = []() {}) : m_cleanup_fcn(cleanup_function) {}
-			~ScopeGuard() { if (m_cleanup_fcn) m_cleanup_fcn(); }
+	protected:
 
-			void setFunction(std::function<void(void)> cleanup_function = []() {}) { m_cleanup_fcn = cleanup_function; }
-			void release(void) { m_cleanup_fcn = {}; };
+		// check if the pipe is open
+		bool isOpen(void) const { return m_pipeStreamBuf.isOpen(); };
 
-		private:
-			std::function<void(void)> m_cleanup_fcn;
-		};
+		// check if the pipe is open
+		operator bool() const { return this->isOpen(); };
 
-		// ================================================================
-		//                       PIPE Streambuf
-		// ================================================================
-
-		// https://en.cppreference.com/w/cpp/io/basic_streambuf
-		// http://www.cplusplus.com/reference/ostream/ostream/
-		// https://codereview.stackexchange.com/questions/185490/custom-ostream-for-a-println-like-function
-		// https://siware.dev/007-cpp-custom-streambuf/
-		// https://siware.dev/007-cpp-custom-streambuf/
-		// https://blog.csdn.net/tangyin025/article/details/50487544
-		// TODO add to LC library
-		class PipeStreamBuf : public std::streambuf, NonCopyable
-		{
-		public:
-
-			PipeStreamBuf(const std::string& command, size_t buffSize = 1 << 10);
-
-			~PipeStreamBuf() override;
-
-			// check if the pipe is open
-			bool isOpen(void) const { return m_pipe; };
-
-			// check if the pipe is open
-			operator bool() const { return this->isOpen(); };
-
-		protected:
-
-			// this is the function that synchronizes the pipe (i.e. flushes)
-			int sync(void) override;
-
-			// this is the function that takes a sequence of chars and puts it in the
-			// buffer optionally calling overflow()
-			//std::streamsize xsputn(const char* ptr, std::streamsize count) override;
-
-			// this is the function the flushes the buffer into the pie
-			int_type overflow(int_type ch = std::char_traits<char>::eof()) override;
-
-
-		private:
-			std::vector<char> m_buff;
-			FILE* m_pipe;
-		};
-
-		// ================================================================
-		//                         GNUPLOT PIPE
-		// ================================================================
-
-		// This class represents a pipe to gnuplot. It is a write only pipe
-		// (ofstream). In the future it will be bidirectional.
-		class GnuplotPipe : NonCopyable, public std::ostream
-		{
-		public:
-
-			GnuplotPipe(bool persist);
-
-		protected:
-
-			// check if the pipe is open
-			bool isOpen(void) const { return m_pipeStreamBuf.isOpen(); };
-
-			// check if the pipe is open
-			operator bool() const { return this->isOpen(); };
-
-		private:
-			PipeStreamBuf m_pipeStreamBuf;
-		};
-
-		
-		// TODO on LC library
-		class MultiStream : NonCopyable
-		{
-		public:
-
-			// TODO concept
-			template <class T>
-			MultiStream& operator<<(const T& obj)
-			{
-				for (auto& ostream : m_ostreams)
-					ostream << obj;
-				return *this;
-			}
-
-			//ostream& endl(ostream& os);
-			MultiStream& operator<<(std::ostream& (*endl)(std::ostream& os))
-			{
-				for (auto& ostream : m_ostreams)
-					ostream << endl;
-				return *this;
-			}
-
-			void addRdbuf(std::streambuf* streambuf);
-			
-		private:
-			std::list<std::ostream> m_ostreams;
-		};
-	}
+	private:
+		PipeStreamBuf m_pipeStreamBuf;
+	};
 
 	// ================================================================
 	//                       GNUPLOT++ INTERFACE
@@ -174,7 +74,7 @@ namespace lc
 
 	// This is the main Gnuplot++ class.s
 	// TODO on a custom stream instead of pipe
-	class Gnuplotpp : public _gnuplot_impl_::MultiStream
+	class Gnuplotpp : public MultiStream
 	{
 	public:
 
@@ -197,42 +97,6 @@ namespace lc
 		//        SUB-CLASSES/ENUMS
 		// ================================
 		// (see de definition of this stuff for additional info)
-
-		// ========== geometry ============
-
-		// If the LC library is included, Vector2d = lc::Vector2d, otherwise
-		// we define a custom struct
-#ifdef _GNUPLOTPP_USE_LC_LIBRARY
-		using Vector2d = lc::Vector2d;
-#else
-		// This class represents a 2 dimensianl vector of double
-		struct Vector2d
-		{
-			// ================================
-			//           COORDINATES
-			// ================================
-
-			// TODO as access funcions
-			double x = 0;
-			double y = 0;
-		};
-#endif
-
-#ifdef _GNUPLOTPP_USE_LC_LIBRARY
-		using Vector2d = lc::Vector2i;
-#else
-		// This class represents a 2 dimensianl vector of int
-		struct Vector2i
-		{
-			// ================================
-			//           COORDINATES
-			// ================================
-
-			// TODO as access funcions
-			int x = 0;
-			int y = 0;
-		};
-#endif
 
 		// ============== ID ==============
 
@@ -276,7 +140,7 @@ namespace lc
 
 		// ============ ... ===============
 
-		enum class ErrorBar
+		enum class ErrorBarDir
 		{
 			X,
 			Y,
@@ -325,7 +189,7 @@ namespace lc
 			virtual void print(Gnuplotpp& os) const = 0;
 		};
 
-		struct GnuplotSerializer : public GnuplotSerializable, _gnuplot_impl_::NonCopyable
+		struct GnuplotSerializer : public GnuplotSerializable, ::lc::NonCopyable
 		{
 			// empty
 		};
@@ -381,7 +245,7 @@ namespace lc
 			std::list<size_t> cols = { 0 };
 			std::optional<std::string> title = {};
 			PlotStyle style = {};
-			std::optional<ErrorBar> errorBars = {};
+			std::optional<ErrorBarDir> errorBars = {};
 
 			std::optional<LineStyle> lineStyle;
 			std::optional<Marker> marker = Marker{};
@@ -442,16 +306,105 @@ namespace lc
 			LineStyle minorLineStyle = { .lineColor = Color{ 0, 0, 0, 224 } };
 		};
 
-		struct Plot2d
+		struct SinglePlotOptions
+		{
+			// title of the plot
+			std::optional<std::string> title = {};
+
+			// Spacing between points, if not set it will be automatically
+			// choosen by gnuplot (it should be 1)
+			std::optional<double> spacing = {};
+
+			// Style of the line connecting the points, if not set
+			// no line will be drawn
+			std::optional<LineStyle> lineStyle = {};
+
+			// The marker type and size
+			std::optional<Marker> marker = Marker{};
+
+			std::optional<PlotAxes> axes = {};
+
+			explicit operator PlotOptions() const
+			{
+				return {
+					.title = title,
+					.lineStyle = lineStyle,
+					.marker = marker,
+					.axes = axes
+				};
+			};
+
+			static SinglePlotOptions defaultValues(void)
+			{
+				SinglePlotOptions opt;
+				return opt;
+			}
+		};
+
+	private:
+
+		struct Plot2dDrawer
 		{
 			std::unique_ptr<DataBuffer> pBuffer;
 			std::unique_ptr<PlotOptions> pOptions;
 
-			void render(Gnuplotpp& gp) const;
-
-		private:
 			std::unique_ptr<PlotOptionsSerializer> pSerializer;
+		};
+
+	public:
+
+		class Plot2dBase
+		{
+		public:
+
+			SinglePlotOptions options = SinglePlotOptions::defaultValues();
+
+		protected:
+
+			virtual PlotOptions getOptions(void) const { return (PlotOptions)this->options; };
+			virtual DataBuffer getData(void) const = 0;
 			friend class Gnuplotpp;
+		};
+
+		class Plot2d : public Plot2dBase
+		{
+			using BASE = Plot2dBase;
+		public:
+
+			// TODO constructors
+
+			std::vector<double> yData;
+			std::vector<double> xData;
+
+		protected:
+			virtual PlotOptions getOptions(void) const;
+			DataBuffer getData(void) const;
+		};
+
+		struct ErrorbarData
+		{
+			// Y data of the errorbar plot
+			std::vector<double> y = {};
+
+			// X data of the orrorbar plot
+			std::vector<double> x = {};
+
+			// Y errors, if a single value is present, errors will be considered homogeneus
+			std::vector<double> yErr = {};
+
+			// X errors, if a single value is present, errors will be considered homogeneus
+			std::vector<double> xErr = {};
+		};
+
+		class Errorbar : public Plot2dBase, public ErrorbarData
+		{
+			using BASE = Plot2dBase;
+
+			// TODO constructors
+
+		protected:
+			virtual PlotOptions getOptions(void) const;
+			DataBuffer getData(void) const;
 		};
 
 		enum class Terminal
@@ -462,7 +415,7 @@ namespace lc
 			JPEG
 		};
 
-		struct MultiplotGuard final : private _gnuplot_impl_::ScopeGuard
+		struct MultiplotGuard final : private ScopeGuard
 		{
 			MultiplotGuard(Gnuplotpp* pGp) : ScopeGuard([pGp]() { pGp->endMultiplot(); }) {};
 			operator bool() const { return true; };
@@ -511,41 +464,6 @@ namespace lc
 		void xLabel(std::optional<std::string> label = {});
 		void yLabel(std::optional<std::string> label = {});
 
-		struct SinglePlotOptions
-		{
-			// title of the plot
-			std::optional<std::string> title = {};
-
-			// Spacing between points, if not set it will be automatically
-			// choosen by gnuplot (it should be 1)
-			std::optional<double> spacing = {};
-
-			// Style of the line connecting the points, if not set
-			// no line will be drawn
-			std::optional<LineStyle> lineStyle = {};
-
-			// The marker type and size
-			std::optional<Marker> marker = Marker{};
-
-			std::optional<PlotAxes> axes = {};
-
-			explicit operator PlotOptions() const
-			{
-				return {
-					.title      = title,
-					.lineStyle  = lineStyle,
-					.marker     = marker,
-					.axes       = axes
-				};
-			};
-
-			static SinglePlotOptions defaultValues(void)
-			{
-				SinglePlotOptions opt;
-				return opt;
-			}
-		};
-
 		// Plot a vector of double values
 		// Note that options.cols is ignored
 		// examples:
@@ -555,7 +473,7 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		// TODO STATIC
-		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Plot a vector of real values
@@ -567,38 +485,22 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 #endif
 
-		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 #endif
-
-		struct ErrorbarData
-		{
-			// Y data of the errorbar plot
-			// (required)
-			const std::vector<double> y = {};
-
-			// X data of the orrorbay plot
-			std::vector<double> x = {};
-
-			// Y errors, if a single value is present, errors will be considered homogeneus
-			std::vector<double> yErr = {};
-
-			// X errors, if a single value is present, errors will be considered homogeneus
-			std::vector<double> xErr = {};
-		};
 
 		// Creates an errorbar plot.
 		// Data can be passes through an ErrorbarData struct, at leas one of X or Y errrors
 		// must be present
-		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Errorbar errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
-		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
+		using Plot2dRef = std::variant<std::reference_wrapper<const Plot2dBase>, std::shared_ptr<const Plot2dBase>>;
 
 		// TOOD description ...
 		void draw(const std::list<Plot2dRef>& plots);
@@ -764,7 +666,6 @@ namespace lc
 
 std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::DataBuffer& buffer);
 std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Color& color);
-std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v);
 
 // ================================================================================================================================
 // ================================================================================================================================
@@ -799,7 +700,7 @@ namespace lc
 		std::vector<double> v;
 		for (const auto& y : data)
 			v.push_back(y);
-		return this->plot(v, singlePlotOptions);
+		return Gnuplotpp::plot(v, singlePlotOptions);
 	}
 #endif
 
@@ -814,7 +715,7 @@ namespace lc
 			vx.push_back(x);
 		for (const auto& y : yData)
 			vy.push_back(y);
-		return this->plot(vx, vy, singlePlotOptions);
+		return Gnuplotpp::plot(vx, vy, singlePlotOptions);
 	}
 #endif
 

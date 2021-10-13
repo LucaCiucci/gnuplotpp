@@ -12,16 +12,16 @@ LC_NOTICE_END -->
 
 # Detailed usage of the *Gnuplot++* library
 
- - [Introduction](#Introduction)
- - [Assumptions](#Assumptions)
- - [Basic plotting](#Basic-plotting)
-   - [Basic plot structure](#Basic-plot-structure)
-   - [Title and labels](#Title-and-labels)
-   - [X and Y plot](#X-and-Y-plot)
- - [Plot Styles](#Plot-Styles)
-   - [Grid](#Grid)
-   - [Errorbar](#Errorbar)
-   - [Overlapped plots](#Overlapped-plots)
+ - [Introduction](#introduction)
+ - [Assumptions](#assumptions)
+ - [Basic plotting](#basic-plotting)
+   - [Basic plot structure](#basic-plot-structure)
+   - [Title and labels](#title-and-labels)
+   - [X and Y plot](#y-and-y-plot)
+ - [Plot Styles](#plot-styles)
+   - [Grid](#grid)
+   - [Errorbar](#errorbar)
+   - [Overlapped plots](#overlapped-plots)
 
 ## Introduction
 
