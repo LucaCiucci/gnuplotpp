@@ -86,13 +86,13 @@ auto randVec = [&](size_t N, double mean = 0.0, double sigma = 1.0) -> std::vect
 ## Where does the output is?
 
 `Gnuplotpp` by default puts commands on the pipe it has opened with gnuplot. You could redirect it to a file using:
-``` cpp
+```cpp
 // writes the output commands in a file named "out.p" instead of sending commands to gnuplot
 Gnuplotpp gp(std::ofstream("out.p"));
 ```
 
 Another way is the following:
-```
+```cpp
 // Creates a standard live gnuplot session
 Gnuplotpp gp;
 
