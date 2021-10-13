@@ -51,7 +51,7 @@ target_sources(
         "include/gnuplotpp/classes.hpp"
 		"src/${PROJECT_NAME}.cpp"
         "src/classes.cpp"
- "src/pipe.hpp")
+ "src/pipe.hpp" "include/gnuplotpp/classes/ScopeGuard.hpp" "include/gnuplotpp/classes/PipeStreamBuf.hpp" "src/classes/PipeStreamBuf.cpp" "include/gnuplotpp/classes/MultiStream.hpp" "src/classes/MultiStream.cpp" "src/classes/Vector.cpp")
 
 target_include_directories(
 	${PROJECT_NAME}

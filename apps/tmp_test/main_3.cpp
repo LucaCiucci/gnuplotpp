@@ -109,7 +109,7 @@ int safe_main_3(int argc, char** argv)
 	};
 
 	{
-		Gnuplotpp gp; gp.setTerminal(Gnuplotpp::Terminal::Qt);
+		Gnuplotpp gp; //gp.setTerminal(Gnuplotpp::Terminal::Qt);
 		gp.addRdbuf(std::cout.rdbuf());
 		gp.writeCommandsOnFile("a.p");
 

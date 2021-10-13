@@ -10,13 +10,17 @@
 ===============================================================================
 LC_NOTICE_END */
 
-#include <gnuplotpp/classes.hpp>
-
-#include "pipe.hpp"
+#include <gnuplotpp/classes/MultiStream.hpp>
 
 namespace lc
 {
-	
+	// ================================================================
+	//                         MULTI-STREAM
+	// ================================================================
+
+	////////////////////////////////////////////////////////////////
+	void MultiStream::addRdbuf(std::streambuf* streambuf)
+	{
+		m_ostreams.emplace_back(streambuf);
+	}
 }
-
-

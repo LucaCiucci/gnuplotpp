@@ -4,7 +4,7 @@
 
 #include <gnuplotpp/gnuplotpp.hpp>
 
-int main_2(int argc, char** argv)
+int main_tmp(int argc, char** argv)
 {
     using namespace lc;
 
@@ -98,6 +98,7 @@ int main_2(int argc, char** argv)
     {
         Gnuplotpp gp;
         gp.setTerminal(Gnuplotpp::Terminal::JPEG, "errorbar.jpg", Vector2i{ 400, 300 });
+        gp.addOstream(std::make_unique<std::ofstream>("ee.p"));
 
         size_t N = 20;
         auto plot = gp.errorbar(

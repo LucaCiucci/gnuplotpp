@@ -140,7 +140,7 @@ namespace lc
 
 		// ============ ... ===============
 
-		enum class ErrorBar
+		enum class ErrorBarDir
 		{
 			X,
 			Y,
@@ -245,7 +245,7 @@ namespace lc
 			std::list<size_t> cols = { 0 };
 			std::optional<std::string> title = {};
 			PlotStyle style = {};
-			std::optional<ErrorBar> errorBars = {};
+			std::optional<ErrorBarDir> errorBars = {};
 
 			std::optional<LineStyle> lineStyle;
 			std::optional<Marker> marker = Marker{};
@@ -306,16 +306,105 @@ namespace lc
 			LineStyle minorLineStyle = { .lineColor = Color{ 0, 0, 0, 224 } };
 		};
 
-		struct Plot2d
+		struct SinglePlotOptions
+		{
+			// title of the plot
+			std::optional<std::string> title = {};
+
+			// Spacing between points, if not set it will be automatically
+			// choosen by gnuplot (it should be 1)
+			std::optional<double> spacing = {};
+
+			// Style of the line connecting the points, if not set
+			// no line will be drawn
+			std::optional<LineStyle> lineStyle = {};
+
+			// The marker type and size
+			std::optional<Marker> marker = Marker{};
+
+			std::optional<PlotAxes> axes = {};
+
+			explicit operator PlotOptions() const
+			{
+				return {
+					.title = title,
+					.lineStyle = lineStyle,
+					.marker = marker,
+					.axes = axes
+				};
+			};
+
+			static SinglePlotOptions defaultValues(void)
+			{
+				SinglePlotOptions opt;
+				return opt;
+			}
+		};
+
+	private:
+
+		struct Plot2dDrawer
 		{
 			std::unique_ptr<DataBuffer> pBuffer;
 			std::unique_ptr<PlotOptions> pOptions;
 
-			void render(Gnuplotpp& gp) const;
-
-		private:
 			std::unique_ptr<PlotOptionsSerializer> pSerializer;
+		};
+
+	public:
+
+		class Plot2dBase
+		{
+		public:
+
+			SinglePlotOptions options = SinglePlotOptions::defaultValues();
+
+		protected:
+
+			virtual PlotOptions getOptions(void) const { return (PlotOptions)this->options; };
+			virtual DataBuffer getData(void) const = 0;
 			friend class Gnuplotpp;
+		};
+
+		class Plot2d : public Plot2dBase
+		{
+			using BASE = Plot2dBase;
+		public:
+
+			// TODO constructors
+
+			std::vector<double> yData;
+			std::vector<double> xData;
+
+		protected:
+			virtual PlotOptions getOptions(void) const;
+			DataBuffer getData(void) const;
+		};
+
+		struct ErrorbarData
+		{
+			// Y data of the errorbar plot
+			std::vector<double> y = {};
+
+			// X data of the orrorbar plot
+			std::vector<double> x = {};
+
+			// Y errors, if a single value is present, errors will be considered homogeneus
+			std::vector<double> yErr = {};
+
+			// X errors, if a single value is present, errors will be considered homogeneus
+			std::vector<double> xErr = {};
+		};
+
+		class Errorbar : public Plot2dBase, public ErrorbarData
+		{
+			using BASE = Plot2dBase;
+
+			// TODO constructors
+
+		protected:
+			virtual PlotOptions getOptions(void) const;
+			DataBuffer getData(void) const;
 		};
 
 		enum class Terminal
@@ -375,41 +464,6 @@ namespace lc
 		void xLabel(std::optional<std::string> label = {});
 		void yLabel(std::optional<std::string> label = {});
 
-		struct SinglePlotOptions
-		{
-			// title of the plot
-			std::optional<std::string> title = {};
-
-			// Spacing between points, if not set it will be automatically
-			// choosen by gnuplot (it should be 1)
-			std::optional<double> spacing = {};
-
-			// Style of the line connecting the points, if not set
-			// no line will be drawn
-			std::optional<LineStyle> lineStyle = {};
-
-			// The marker type and size
-			std::optional<Marker> marker = Marker{};
-
-			std::optional<PlotAxes> axes = {};
-
-			explicit operator PlotOptions() const
-			{
-				return {
-					.title      = title,
-					.lineStyle  = lineStyle,
-					.marker     = marker,
-					.axes       = axes
-				};
-			};
-
-			static SinglePlotOptions defaultValues(void)
-			{
-				SinglePlotOptions opt;
-				return opt;
-			}
-		};
-
 		// Plot a vector of double values
 		// Note that options.cols is ignored
 		// examples:
@@ -419,7 +473,7 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		// TODO STATIC
-		Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<double>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		// Plot a vector of real values
@@ -431,38 +485,22 @@ namespace lc
 		//  - gnuplot.plot({ 42, 40, 30, 20, 10, 0 }, { .spacing=0.1, .options={ .title="Hello There!" } })
 		// TODO update examples
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<Ty>& data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 #endif
 
-		Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
 #if defined(_GNUPLOTPP_USE_CONCEPTS)
 		template <std::convertible_to<double> Ty>
-		Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Plot2d plot(const std::vector<Ty>& xData, const std::vector<Ty>& yData, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 #endif
-
-		struct ErrorbarData
-		{
-			// Y data of the errorbar plot
-			// (required)
-			const std::vector<double> y = {};
-
-			// X data of the orrorbay plot
-			std::vector<double> x = {};
-
-			// Y errors, if a single value is present, errors will be considered homogeneus
-			std::vector<double> yErr = {};
-
-			// X errors, if a single value is present, errors will be considered homogeneus
-			std::vector<double> xErr = {};
-		};
 
 		// Creates an errorbar plot.
 		// Data can be passes through an ErrorbarData struct, at leas one of X or Y errrors
 		// must be present
-		Plot2d errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
+		static Errorbar errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
-		using Plot2dRef = std::variant<std::reference_wrapper<Plot2d>, std::shared_ptr<Plot2d>>;
+		using Plot2dRef = std::variant<std::reference_wrapper<const Plot2dBase>, std::shared_ptr<const Plot2dBase>>;
 
 		// TOOD description ...
 		void draw(const std::list<Plot2dRef>& plots);
