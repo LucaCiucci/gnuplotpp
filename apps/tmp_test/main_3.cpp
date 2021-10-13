@@ -113,16 +113,21 @@ int safe_main_3(int argc, char** argv)
 		gp.addRdbuf(std::cout.rdbuf());
 		gp.writeCommandsOnFile("a.p");
 
+		std::optional<int> v;
+		v.value();
+
 		gp << "plot sin(x)" << std::endl;
 		auto p = gp.plot(randVec(100));
 
 		auto p2 = Gnuplotpp::Plot2d(randVec(100));
+		auto p3 = Gnuplotpp::plot(randVec(100));
 		p2.options.marker.value().pointType = Gnuplotpp::PointType::TriangleDot;
 
 		gp.draw(
 			{ 
 				p,
-				p2
+				p2,
+				p3
 			}
 		);
 	}
