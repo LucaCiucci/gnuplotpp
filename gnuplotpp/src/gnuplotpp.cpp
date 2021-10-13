@@ -24,6 +24,10 @@ LC_NOTICE_END */
 // this macro is used to put a space
 #define _TMP_GNUPLOTPP_SPACE(s) s << " "
 
+// !!!
+#undef max
+#undef min
+
 namespace lc
 {
 	// ================================================================

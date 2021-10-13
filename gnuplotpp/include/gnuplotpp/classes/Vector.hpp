@@ -12,6 +12,10 @@ LC_NOTICE_END */
 
 #pragma once
 
+#include <ostream>
+
+#include <initializer_list>
+
 #if defined(_GNUPLOTPP_USE_LC_LIBRARY)
 #include <LC/math/geometry/Vector.hpp>
 #endif
@@ -30,9 +34,15 @@ namespace lc
 		{
 		public:
 			VectorImpl() : X{} {};
-			VectorImpl(const T& x, const T& y) : X{ x, y } {};
 			VectorImpl(const VectorImpl&) = default;
 			VectorImpl(VectorImpl&&) = default;
+
+			// // TODO meglio
+			// VectorImpl(const std::initializer_list<T>& list) : X {}
+			// {
+			// 	for (size_t i = 0; i < N && i < list.size(); i++)
+			// 		X[i] = list[i];
+			// }
 
 			VectorImpl& operator=(const VectorImpl&) = default;
 			VectorImpl& operator=(VectorImpl&&) = default;
@@ -43,11 +53,11 @@ namespace lc
 	}
 
 	template <size_t N, class T>
-	class Vector : _gnuplot_impl_::VectorImpl<N, T>
+	class Vector : public _gnuplot_impl_::VectorImpl<N, T>
 	{
 	public:
-		using _gnuplot_impl_::VectorImpl::VectorImpl;
-		using _gnuplot_impl_::VectorImpl::operator=;
+		using _gnuplot_impl_::VectorImpl<N, T>::VectorImpl;
+		using _gnuplot_impl_::VectorImpl<N, T>::operator=;
 
 		T& x(void) { return this->X[0]; }
 		const T& x(void) const { return this->X[0]; }
@@ -60,22 +70,28 @@ namespace lc
 	};
 
 	template <class T>
-	class Vector<1, T> : _gnuplot_impl_::VectorImpl<1, T>
+	class Vector<1, T> : public _gnuplot_impl_::VectorImpl<1, T>
 	{
 	public:
-		using VectorImpl::VectorImpl;
-		using VectorImpl::operator=;
+		using _gnuplot_impl_::VectorImpl<1, T>::VectorImpl;
+		using _gnuplot_impl_::VectorImpl<1, T>::operator=;
+
+		// TODO calling base constructor
+		Vector(const T& x) { this->x() = x; };
 
 		T& x(void) { return this->X[0]; }
 		const T& x(void) const { return this->X[0]; }
 	};
 
 	template <class T>
-	class Vector<2, T> : _gnuplot_impl_::VectorImpl<1, T>
+	class Vector<2, T> : public _gnuplot_impl_::VectorImpl<2, T>
 	{
 	public:
-		using VectorImpl::VectorImpl;
-		using VectorImpl::operator=;
+		using _gnuplot_impl_::VectorImpl<2, T>::VectorImpl;
+		using _gnuplot_impl_::VectorImpl<2, T>::operator=;
+
+		// TODO calling base constructor
+		Vector(const T& x, const T& y) { this->x() = x; this->y() = y; };
 
 		T& x(void) { return this->X[0]; }
 		const T& x(void) const { return this->X[0]; }
@@ -85,11 +101,14 @@ namespace lc
 	};
 
 	template <class T>
-	class Vector<3, T> : _gnuplot_impl_::VectorImpl<1, T>
+	class Vector<3, T> : public _gnuplot_impl_::VectorImpl<3, T>
 	{
 	public:
-		using VectorImpl::VectorImpl;
-		using VectorImpl::operator=;
+		using _gnuplot_impl_::VectorImpl<3, T>::VectorImpl;
+		using _gnuplot_impl_::VectorImpl<3, T>::operator=;
+
+		// TODO calling base constructor
+		Vector(const T& x, const T& y, const T& z) { this->x() = x; this->y() = y; this->z() = z; };
 
 		T& x(void) { return this->X[0]; }
 		const T& x(void) const { return this->X[0]; }

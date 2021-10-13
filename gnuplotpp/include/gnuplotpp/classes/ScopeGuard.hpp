@@ -12,6 +12,8 @@ LC_NOTICE_END */
 
 #pragma once
 
+#include <functional>
+
 #if defined(_GNUPLOTPP_USE_LC_LIBRARY)
 #include <LC/utils/types/ScopeGuard.hpp>
 #endif

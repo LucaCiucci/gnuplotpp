@@ -18,9 +18,9 @@ namespace lc
 }
 
 #ifndef _GNUPLOTPP_USE_LC_LIBRARY
-std::ostream& operator<<(std::ostream& ostream, const lc::Gnuplotpp::Vector2d& v)
+std::ostream& operator<<(std::ostream& ostream, const lc::Vector2d& v)
 {
-	ostream << "(" << v.x << ", " << v.y << ")" << std::endl;
+	ostream << "(" << v.x() << ", " << v.y() << ")" << std::endl;
 	return ostream;
 }
 #endif // !_GNUPLOTPP_USE_LC_LIBRARY
