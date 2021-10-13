@@ -115,7 +115,16 @@ int safe_main_3(int argc, char** argv)
 
 		gp << "plot sin(x)" << std::endl;
 		auto p = gp.plot(randVec(100));
-		gp.draw({ p });
+
+		auto p2 = Gnuplotpp::Plot2d(randVec(100));
+		p2.options.marker.value().pointType = Gnuplotpp::PointType::TriangleDot;
+
+		gp.draw(
+			{ 
+				p,
+				p2
+			}
+		);
 	}
 
 	return 0;

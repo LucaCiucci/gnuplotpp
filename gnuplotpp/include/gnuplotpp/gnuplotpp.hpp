@@ -373,6 +373,23 @@ namespace lc
 
 			// TODO constructors
 
+			Plot2d() = default;
+			Plot2d(const Plot2d&) = default;
+			Plot2d(Plot2d&&) = default;
+
+			Plot2d(const std::vector<double>& yData, SinglePlotOptions options = SinglePlotOptions::defaultValues()) :
+				yData{ yData }
+			{
+				this->options = options;
+			};
+
+			Plot2d(const std::vector<double>& xData, const std::vector<double>& yData, SinglePlotOptions options = SinglePlotOptions::defaultValues()) :
+				xData{ xData },
+				yData{ yData }
+			{
+				this->options = options;
+			};
+
 			std::vector<double> yData;
 			std::vector<double> xData;
 
@@ -500,7 +517,7 @@ namespace lc
 		// must be present
 		static Errorbar errorbar(ErrorbarData data, SinglePlotOptions singlePlotOptions = SinglePlotOptions::defaultValues());
 
-		using Plot2dRef = std::variant<std::reference_wrapper<const Plot2dBase>, std::shared_ptr<const Plot2dBase>>;
+		using Plot2dRef = std::reference_wrapper<const Plot2dBase>;
 
 		// TOOD description ...
 		void draw(const std::list<Plot2dRef>& plots);
