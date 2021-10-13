@@ -46,8 +46,8 @@ namespace lc
 	class Vector : _gnuplot_impl_::VectorImpl<N, T>
 	{
 	public:
-		using VectorImpl::VectorImpl;
-		using VectorImpl::operator=;
+		using _gnuplot_impl_::VectorImpl::VectorImpl;
+		using _gnuplot_impl_::VectorImpl::operator=;
 
 		T& x(void) { return this->X[0]; }
 		const T& x(void) const { return this->X[0]; }
