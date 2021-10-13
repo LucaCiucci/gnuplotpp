@@ -14,8 +14,9 @@ LC_NOTICE_END -->
 
  - [Introduction](#introduction)
  - [Assumptions](#assumptions)
+ - [Where does the output is?](#where-does-the-output-is)
  - [Basic plotting](#basic-plotting)
-   - [Basic plot structure](#basic-plot-structure)
+   - [A basic plot](#a-basic-plot)
    - [Title and labels](#title-and-labels)
    - [X and Y plot](#y-and-y-plot)
  - [Plot Styles](#plot-styles)
@@ -25,14 +26,50 @@ LC_NOTICE_END -->
 
 ## Introduction
 
+At the current state, *Gnuplot++* uses a **pipe** to comunicate with the *Gnuplot* execution.
+
+There is a class named `GnuplotPipe` that launches a *Gnuplot* execution with a pipe using a custom `streambuf` named `PipeStreamBuf`.  
+`PipeStreamBuf` is created as follow:
+```cpp
+// PipeStreamBuf inherits from std::streambuf
+PipeStreamBuf pipeStreamBuf("<command to execute>");
+```
+To start a Gnuplot session, the `GnuplotPipe` class creates `PipeStreamBuf` with the command `gnuplot [--persist]`.
+
+`GnuplotPipe` is a `stream` and it can be created as follow:
+```cpp
+GnuplotPipe pipe; // type 'pipe(false)' to remove '--presist'
+```
+This pipe is an `ostream` and it can therefore accept data using the "<<" operator, for example:
+```cpp
+pipe << "some dommand or data" << std::endl;
+```
+
+Note that `endl` sends a new line and flushes the buffer (like pressing <kbd>Enter</kbd> on the keyboard).
+
+We could now plot using the following syntax:
+```cpp
+pipe << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::endl;
+```
+
+But this is pretty boring since it is *text-based*. For this reason, ther is another class called `Gnuplotpp` that takes care of some of this mess and exposes some simple functiions:
+```cpp
+Gnuplotpp gp; // Gnuplotpp is basically a 'GnuplotPipe'
+```
+
 ## Assumptions
 
-Let:
+Let's assume that, in our code, we wrote:
 ```cpp
+#include <gnuplotpp/gnuplotpp.hpp>
+// ...
 Gnuplotpp gp;
 ```
 and:
 ```cpp
+#include <random>
+#include <vector>
+// ...
 std::default_random_engine e;
 std::normal_distribution n;
 
@@ -46,9 +83,66 @@ auto randVec = [&](size_t N, double mean = 0.0, double sigma = 1.0) -> std::vect
 };
 ```
 
+## Where does the output is?
+
+`Gnuplotpp` by default puts commands on the pipe it has opened with gnuplot. You could redirect it to a file using:
+``` cpp
+// writes the output commands in a file named "out.p" instead of sending commands to gnuplot
+Gnuplotpp gp(std::ofstream("out.p"));
+```
+
+Another way is the following:
+```
+// Creates a standard live gnuplot session
+Gnuplotpp gp;
+
+// Tell to type the commands sent to Gnuplot also on cout.
+// You can add other buffers if you want.
+gp.addRdbuf(std::cout.rdbuf());
+
+// You can even write to other ostream, for example a file:
+gp.addOstream(std::make_unique<std::ofstream>("out.p"));
+```
+
+`Gnuplotpp` is a `MultiStream`, this meas every command is sent to every streambuffer, for example, the statement:
+```cpp
+gp << "<some command>";
+```
+sends `"<some command>"` to:
+  1. the `GnuplotPipe` i.e. to Gnuplot
+  2. prints on `cout` (because we've passed its streambuffer)
+  3. writes to `"out.p"` file
+
 ## Basic plotting
 
-### Basic plot structure
+Plotting coes as follows:
+  1. create a some plots: `plot1`, `plot2`, ...
+  2. use the `Gnuplotpp::draw()` function to actually draw the plots by sending the commands
+
+Plots can be created in various ways, for example creating a basic 2d plot:
+```cpp
+// Create a plot object and then set data and options
+Gnuplotpp::Plot2d plot;
+plot.yData = {/* values */};
+plot.options; // you can set options
+```
+You could also use a constructor, for example:
+```cpp
+auto plot = Gnuplotpp::Plot2d({/* values */}, {/* options */});
+```
+or a `Gnuplotpp` static function aimed to simplify plot creation, for example:
+```cpp
+auto p = Gnuplotpp::plot({/* values */}, {/* options */});
+// also gp.plot() is the same function
+```
+
+---
+
+TODO update and reorganize from here to EOF
+
+---
+
+### A basic plot
 
 ```cpp
 // Creates a basic plot with the given data.
