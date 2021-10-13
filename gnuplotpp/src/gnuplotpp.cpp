@@ -577,16 +577,7 @@ namespace lc
 
 		for (auto it = plots.begin(); it != plots.end(); it++)
 		{
-			const Plot2dBase* m_pPlot = nullptr;
-			{
-				if (const auto* pRef = std::get_if<std::reference_wrapper<const Plot2dBase>>(&*it))
-					m_pPlot = &pRef->get();
-				if (const auto* pPtr = std::get_if<std::shared_ptr<const Plot2dBase>>(&*it))
-					m_pPlot = pPtr->get();
-				if (!m_pPlot)
-					continue;
-			}
-			const Plot2dBase& plot = *m_pPlot;
+			const Plot2dBase& plot = it->get();
 
 			func(plot, first);
 			first = false;
