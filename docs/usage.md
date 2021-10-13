@@ -54,6 +54,7 @@ pipe << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std
 
 But this is pretty boring since it is *text-based*. For this reason, ther is another class called `Gnuplotpp` that takes care of some of this mess and exposes some simple functiions:
 ```cpp
+class Gnuplotpp {};
 Gnuplotpp gp; // Gnuplotpp is basically a 'GnuplotPipe'
 ```
 
@@ -116,7 +117,7 @@ sends `"<some command>"` to:
 ## Basic plotting
 
 Plotting coes as follows:
-  1. create a some plots: `plot1`, `plot2`, ...
+  1. create some plots: `plot1`, `plot2`, ...
   2. use the `Gnuplotpp::draw()` function to actually draw the plots by sending the commands
 
 Plots can be created in various ways, for example creating a basic 2d plot:
