@@ -700,7 +700,7 @@ namespace lc
 		std::vector<double> v;
 		for (const auto& y : data)
 			v.push_back(y);
-		return this->plot(v, singlePlotOptions);
+		return Gnuplotpp::plot(v, singlePlotOptions);
 	}
 #endif
 
@@ -715,7 +715,7 @@ namespace lc
 			vx.push_back(x);
 		for (const auto& y : yData)
 			vy.push_back(y);
-		return this->plot(vx, vy, singlePlotOptions);
+		return Gnuplotpp::plot(vx, vy, singlePlotOptions);
 	}
 #endif
 
