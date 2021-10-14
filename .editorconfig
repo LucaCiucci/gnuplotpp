@@ -1,0 +1,9 @@
+
+# TODO su notice replacer i caratteri dopo il token sono da mettere a prefisso del testo, serve dove non ci sono multiline commenst
+
+# https://editorconfig.org/
+
+# top-most EditorConfig file
+root = true
+
+indent_size = 4
