@@ -503,7 +503,15 @@ namespace lc
 				gp << " size " << size.value().x() << ", " << size.value().y();
 			gp << std::endl;
 			if (!outFile)
-				throw std::runtime_error("Gnuplotpp::setTerm with term=PNG requires an output file");
+				throw std::runtime_error("Gnuplotpp::setTerm with term=JPG requires an output file");
+			break;
+		case Terminal::PDF:
+			gp << "set term pdf";
+			if (size)
+				gp << " size " << size.value().x() << ", " << size.value().y();
+			gp << std::endl;
+			if (!outFile)
+				throw std::runtime_error("Gnuplotpp::setTerm with term=PDF requires an output file");
 			break;
 		default:
 			break;

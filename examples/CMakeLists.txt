@@ -15,7 +15,7 @@ LC_NOTICE_END ]]
 ################################################################
 #[[
 
-Top level CMake project, see README.md for info
+TODO
 
 ]]
 
@@ -23,31 +23,43 @@ Top level CMake project, see README.md for info
 #                    basic configurations
 ################################################################
 
-cmake_minimum_required (VERSION 3.20)
-
 ################################################################
-#                          OPTIONS
+#                         EXECUTABLE
 ################################################################
 
-option(GNUPLOTPP_HEADER_ONLY "build and install as header only library" OFF)
-option(GNUPLOTPP_USE_LC_LIBRARY "use the lc library" OFF)
+add_executable("examples")
 
 ################################################################
-#                          PROJECT
+#                        DEPENDENCIES
 ################################################################
-# main project definition
 
-project("gnuplotpp" VERSION 0.0
-    DESCRIPTION "..."
-    LANGUAGES CXX
+add_dependencies("examples" "gnuplotpp")
+
+################################################################
+#                     EXTERNAL LIBRARIES
+################################################################
+
+################################################################
+#                         LIBRARIES
+################################################################
+
+target_link_libraries("examples" PRIVATE "gnuplotpp")
+
+################################################################
+#                          SOURCES
+################################################################
+
+target_sources(
+    "examples"
+    PRIVATE
+        "main.cpp" "main_functions.hpp"
+
+        # examples
+        "001_GP_initialization/main.cpp"
+        "002_GP_output/main.cpp"
+        "003_plotting_2d/main.cpp"
 )
 
-# add_subdirectory("cmake")
-
 ################################
-#         SUBPROJECTS
+#   PREPROCESSOR DEFINITIONS
 ################################
-
-add_subdirectory("gnuplotpp")
-add_subdirectory("apps")
-add_subdirectory("examples")

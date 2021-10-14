@@ -21,7 +21,7 @@ This is a very simple library that allows you to call the [Gnuplot](http://www.g
 
 Make sure to [install Gnuplot](http://www.gnuplot.info/download.html) before using this library (on Windows you have to add Gnuplot to PATH by selecting the option during installation or by adding the bin folder to PATH by hand). To test your gnuplot installation you can open a terminal and type `gnuplot --version`.
 
-Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf) and the **[`docs/`](docs/)** folder
+Also take a look at the [Gnuplot manual](http://www.gnuplot.info/docs_5.0/gnuplot.pdf) and the **[`docs`](docs/)** and [examples](examples/) folders.
 
 If you don't know how to use *C++*, take a look at [IDontKnowCpp](./docs/IDontKnowCpp.md) guide
 
@@ -51,7 +51,7 @@ gp << "plot [-pi/2:pi] cos(x),-(sin(x) > sin(x+1) ? sin(x) : sin(x+1))" << std::
 or use the interface functions to easily create complex and customizable plots:
 ```cpp
 Gnuplotpp gp;
-auto myPlot = gnuplot.plot({ 1, 2, 3, 2 });
+auto myPlot = gp.plot({ 1, 2, 3, 2 });
 gp.render({ myPlot });
 ```
 

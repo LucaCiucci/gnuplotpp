@@ -429,7 +429,8 @@ namespace lc
 			None,
 			Qt,
 			PNG,
-			JPEG
+			JPEG,
+			PDF
 		};
 
 		struct MultiplotGuard final : private ScopeGuard
