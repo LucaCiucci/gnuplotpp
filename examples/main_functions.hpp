@@ -19,11 +19,6 @@ LC_NOTICE_END */
 // !!!
 #include <stdexcept>
 
-struct MyException : public std::exception
-{
-	MyException() : std::exception("aaa") {};
-};
-
 extern const char* main_001_name;
 extern const char* main_001_description;
 extern int main_001(void);
