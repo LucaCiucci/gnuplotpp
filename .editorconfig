@@ -6,4 +6,5 @@
 # top-most EditorConfig file
 root = true
 
+[*.{h,c,hpp,cpp}]
 indent_size = 4
