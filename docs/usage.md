@@ -138,7 +138,7 @@ auto p = Gnuplotpp::plot({/* values */}, {/* options */});
 
 ---
 
-This article is incomplete, please see the [examples](examples) folder.
+This article is incomplete, please see the [examples](../examples) folder.
 
 TODO update and reorganize from here to EOF
 
