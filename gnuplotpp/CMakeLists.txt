@@ -27,15 +27,16 @@ TODO
 #                     EXTERNAL LIBRARIES
 ################################################################
 
-find_package(LC)
-message("GNUPLOTPP_USE_LC_LIBRARY = ${GNUPLOTPP_USE_LC_LIBRARY}")
 if (GNUPLOTPP_USE_LC_LIBRARY)
+    find_package(LC)
+    message("GNUPLOTPP_USE_LC_LIBRARY = ${GNUPLOTPP_USE_LC_LIBRARY}")
     if (${LC_FOUND})
         message("LC library found")
     else()
         message(FATAL_ERROR "no LC library found")
     endif()
-    else()
+else()
+    message("LC library not used")
 endif()
 
 ################################################################
