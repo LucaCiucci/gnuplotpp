@@ -776,3 +776,6 @@ namespace lc
 	}
 #endif
 }
+
+#undef min
+#undef max
